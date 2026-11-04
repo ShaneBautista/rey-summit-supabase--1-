@@ -1,12 +1,37 @@
 const adminMoney = value => `₱${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const adminStatuses = { pending: 'Pending', confirmed: 'Confirmed', preparing: 'Preparing', out_for_delivery: 'Out for delivery', completed: 'Delivered', cancelled: 'Cancelled' };
-const deliveryNextSteps = {
-    pending: { status: 'confirmed', label: 'Confirm' },
-    confirmed: { status: 'preparing', label: 'Start preparing' },
-    preparing: { status: 'out_for_delivery', label: 'Out for delivery' },
-    out_for_delivery: { status: 'completed', label: 'Mark delivered' },
+const adminStatuses = {
+    pending: 'Pending',
+    confirmed: 'Confirmed',
+    preparing: 'Preparing',
+    out_for_delivery: 'Out for delivery',
+    completed: 'Delivered',
+    cancelled: 'Cancelled'
 };
-const escapeAdmin = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#039;', '"':'&quot;' }[character]));
+const deliveryNextSteps = {
+    pending: {
+        status: 'confirmed',
+        label: 'Confirm'
+    },
+    confirmed: {
+        status: 'preparing',
+        label: 'Start preparing'
+    },
+    preparing: {
+        status: 'out_for_delivery',
+        label: 'Out for delivery'
+    },
+    out_for_delivery: {
+        status: 'completed',
+        label: 'Mark delivered'
+    },
+};
+const escapeAdmin = value => String(value ?? '').replace(/[&<>'"]/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#039;',
+    '"': '&quot;'
+} [character]));
 
 function wireAdminLogoutConfirmation() {
     const logoutLinks = document.querySelectorAll('.aside-footer .logout');
@@ -102,7 +127,12 @@ let branchComparisonRequestInProgress = false;
         return;
     }
     const reportDate = document.getElementById('reportDate');
-    if (reportDate) reportDate.textContent = new Date().toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric', year:'numeric' });
+    if (reportDate) reportDate.textContent = new Date().toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
     if (page === 'staff_accounts') {
         await setupStaffAccounts();
         return;
@@ -110,7 +140,10 @@ let branchComparisonRequestInProgress = false;
     try {
         const response = await rsmApi('admin_dashboard_data.php');
         const data = await response.json();
-        if (response.status === 401) { window.location.href = 'Admin_login.html'; return; }
+        if (response.status === 401) {
+            window.location.href = 'Admin_login.html';
+            return;
+        }
         if (!data.success) throw new Error(data.message);
         const adminName = document.getElementById('adminName');
         if (adminName) adminName.textContent = data.admin.name || 'Admin';
@@ -122,7 +155,9 @@ let branchComparisonRequestInProgress = false;
         if (page === 'sales') await loadSales();
         if (page === 'delivery') await setupDeliveryQueue();
         if (page === 'performance') renderPerformance(data);
-    } catch (error) { document.getElementById('pageMessage').textContent = error.message || 'Dashboard data is unavailable.'; }
+    } catch (error) {
+        document.getElementById('pageMessage').textContent = error.message || 'Dashboard data is unavailable.';
+    }
 })();
 
 function setupAdminBranchFilter(selectedBranch) {
@@ -136,11 +171,18 @@ function setupAdminBranchFilter(selectedBranch) {
         try {
             const response = await rsmApi('admin_branch_context_set.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ branch: filter.value }),
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    branch: filter.value
+                }),
             });
             const result = await response.json();
-            if (response.status === 401) { window.location.href = 'Admin_login.html'; return; }
+            if (response.status === 401) {
+                window.location.href = 'Admin_login.html';
+                return;
+            }
             if (!result.success) throw new Error(result.message || 'Could not change branch.');
             window.location.reload();
         } catch (error) {
@@ -227,7 +269,9 @@ async function createStaffAccount(event) {
     try {
         const response = await rsmApi('admin_staff.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(payload),
         });
         const result = await response.json();
@@ -253,8 +297,13 @@ async function manageStaffAccount(staffId, action) {
     try {
         const response = await rsmApi('admin_staff.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action, staff_id: staffId }),
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action,
+                staff_id: staffId
+            }),
         });
         const result = await response.json();
         if (response.status === 401) {
@@ -274,7 +323,10 @@ let inventoryEventsBound = false;
 async function loadInventory() {
     const response = await rsmApi('admin_products.php');
     const data = await response.json();
-    if (response.status === 401) { window.location.href = 'Admin_login.html'; return; }
+    if (response.status === 401) {
+        window.location.href = 'Admin_login.html';
+        return;
+    }
     if (!data.success) throw new Error(data.message || 'Could not load products.');
     const productSubmit = document.getElementById('productSubmit');
     const formMessage = document.getElementById('formMessage');
@@ -312,7 +364,10 @@ function editProduct(id) {
     document.getElementById('productFormTitle').textContent = 'Update product';
     document.getElementById('productSubmit').textContent = 'Save changes';
     document.getElementById('cancelEdit').hidden = false;
-    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    form.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+    });
 }
 
 function resetProductForm() {
@@ -330,27 +385,52 @@ async function saveProduct(event) {
     const payload = Object.fromEntries(new FormData(form).entries());
     payload.action = payload.product_id ? 'update' : 'create';
     try {
-        const response = await rsmApi('admin_products.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const response = await rsmApi('admin_products.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
         const result = await response.json();
-        if (response.status === 401) { window.location.href = 'Admin_login.html'; return; }
+        if (response.status === 401) {
+            window.location.href = 'Admin_login.html';
+            return;
+        }
         if (!result.success) throw new Error(result.message);
         resetProductForm();
         await loadInventory();
         showToast(result.message);
-    } catch (error) { document.getElementById('formMessage').textContent = error.message || 'Could not save product.'; }
+    } catch (error) {
+        document.getElementById('formMessage').textContent = error.message || 'Could not save product.';
+    }
 }
 
 async function deleteProduct(id) {
     const product = inventoryProducts.find(item => String(item.product_id) === String(id));
     if (!product || !window.confirm(`Delete “${product.product_name}” from the active catalogue?`)) return;
     try {
-        const response = await rsmApi('admin_products.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', product_id: id }) });
+        const response = await rsmApi('admin_products.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'delete',
+                product_id: id
+            })
+        });
         const result = await response.json();
-        if (response.status === 401) { window.location.href = 'Admin_login.html'; return; }
+        if (response.status === 401) {
+            window.location.href = 'Admin_login.html';
+            return;
+        }
         if (!result.success) throw new Error(result.message);
         await loadInventory();
         showToast(result.message);
-    } catch (error) { document.getElementById('pageMessage').textContent = error.message || 'Could not delete product.'; }
+    } catch (error) {
+        document.getElementById('pageMessage').textContent = error.message || 'Could not delete product.';
+    }
 }
 
 function renderOverview(data) {
@@ -398,22 +478,22 @@ function renderDecisionSupport(data) {
     risingDemandProducts.slice(0, 3).forEach(product => {
         const recent = Number(product.recent_units || 0);
         const previous = Number(product.previous_units || 0);
-        const trend = previous === 0
-            ? `Recent sales recorded ${recent} units; none were recorded in the preceding 7 days`
-            : `Recent 7-day sales increased ${Math.round(((recent - previous) / previous) * 100)}% versus the preceding 7 days`;
+        const trend = previous === 0 ?
+            `Recent sales recorded ${recent} units; none were recorded in the preceding 7 days` :
+            `Recent 7-day sales increased ${Math.round(((recent - previous) / previous) * 100)}% versus the preceding 7 days`;
         recommendations.push(`<li><strong>Demand signal:</strong> ${escapeAdmin(product.product_name)} — ${trend}. Review alongside the forecast.</li>`);
     });
 
     const openDeliveries = Number(data.open_deliveries || 0);
     const fulfillment = Number(data.fulfillment_rate || 0);
-    const fulfillmentSummary = Number(data.recent_sales_count || 0) > 0
-        ? `recent fulfillment rate is ${fulfillment}%`
-        : 'there are no sales records in the last 30 days, so the fulfillment rate is unavailable';
+    const fulfillmentSummary = Number(data.recent_sales_count || 0) > 0 ?
+        `recent fulfillment rate is ${fulfillment}%` :
+        'there are no sales records in the last 30 days, so the fulfillment rate is unavailable';
     recommendations.push(`<li><strong>Delivery workload:</strong> ${openDeliveries} open deliveries; ${fulfillmentSummary}. Review the delivery queue if workload is building up.</li>`);
 
-    target.innerHTML = recommendations.length
-        ? `<ul>${recommendations.join('')}</ul>`
-        : '<p class="empty">No inventory or demand signals need attention right now. Review the forecast and branch scorecard as part of routine planning.</p>';
+    target.innerHTML = recommendations.length ?
+        `<ul>${recommendations.join('')}</ul>` :
+        '<p class="empty">No inventory or demand signals need attention right now. Review the forecast and branch scorecard as part of routine planning.</p>';
 }
 
 async function loadOverviewBranchInsight(selectedBranch) {
@@ -424,9 +504,14 @@ async function loadOverviewBranchInsight(selectedBranch) {
     }
 
     try {
-        const response = await rsmApi('admin_branch_comparison.php', { cache: 'no-store' });
+        const response = await rsmApi('admin_branch_comparison.php', {
+            cache: 'no-store'
+        });
         const data = await response.json();
-        if (response.status === 401) { window.location.href = 'Admin_login.html'; return; }
+        if (response.status === 401) {
+            window.location.href = 'Admin_login.html';
+            return;
+        }
         if (!data.success) throw new Error(data.message || 'Could not load branch comparison.');
         const branches = (data.branches || []).slice().sort((first, second) => Number(second.revenue || 0) - Number(first.revenue || 0));
         if (!branches.length) {
@@ -442,12 +527,21 @@ async function loadOverviewBranchInsight(selectedBranch) {
 function renderRevenueChart(rows) {
     const target = document.getElementById('revenueChart');
     const valuesByDate = new Map(rows.map(row => [String(row.sale_date), Number(row.revenue || 0)]));
-    const days = Array.from({ length: 7 }, (_, index) => {
+    const days = Array.from({
+        length: 7
+    }, (_, index) => {
         const date = new Date();
         date.setHours(0, 0, 0, 0);
         date.setDate(date.getDate() - (6 - index));
         const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        return { key, label: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), value: valuesByDate.get(key) || 0 };
+        return {
+            key,
+            label: date.toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric'
+            }),
+            value: valuesByDate.get(key) || 0
+        };
     });
 
     const maxValue = Math.max(...days.map(day => day.value));
@@ -468,7 +562,9 @@ function renderRevenueChart(rows) {
         x: left + (chartWidth * index / (days.length - 1)),
         y: top + chartHeight * (1 - day.value / axisMax),
     }));
-    const gridLines = Array.from({ length: 4 }, (_, index) => {
+    const gridLines = Array.from({
+        length: 4
+    }, (_, index) => {
         const value = axisMax - (step * index);
         const y = top + (chartHeight * index / 3);
         return `<g><line class="chart-grid-line" x1="${left}" y1="${y}" x2="${width - right}" y2="${y}"></line><text class="chart-axis-label" x="${left - 10}" y="${y + 5}" text-anchor="end">${Math.round(value).toLocaleString()}</text></g>`;
@@ -497,7 +593,11 @@ function renderOrderStatusChart(rows) {
         ['completed', 'Delivered', '#5572d8'],
     ];
     const counts = new Map(rows.map(row => [row.order_status, Number(row.order_count || 0)]));
-    const statuses = statusOrder.map(([key, label, color]) => ({ label, color, count: counts.get(key) || 0 }));
+    const statuses = statusOrder.map(([key, label, color]) => ({
+        label,
+        color,
+        count: counts.get(key) || 0
+    }));
     const total = statuses.reduce((sum, status) => sum + status.count, 0);
     let progress = 0;
     const segments = statuses.filter(status => status.count > 0).map(status => {
@@ -547,16 +647,16 @@ function renderForecast(data) {
     document.getElementById('forecastOrders').textContent = forecastUnits.toLocaleString();
     document.querySelector('#categoryBars').previousElementSibling.textContent = 'Product demand forecast';
     const hasForecastHistory = forecastProducts.some(product => Number(product.historical_units || 0) > 0);
-    document.getElementById('categoryBars').innerHTML = !forecastProducts.length
-        ? '<p class="empty">No active products are available for forecasting.</p>'
-        : !hasForecastHistory
-            ? '<p class="empty">No product sales were recorded in the 28-day forecast period, so a reliable demand forecast is not available.</p>'
-            : forecastProducts.slice().sort((first, second) => Number(second.forecast_units || 0) - Number(first.forecast_units || 0)).slice(0, 8).map(product => `<div class="bar-row"><span>${escapeAdmin(product.product_name)}</span><div class="bar"><i style="width:${Math.round((Number(product.forecast_units || 0) / maxForecast) * 100)}%"></i></div><strong>${Number(product.forecast_units || 0)} units${Number(product.restock_units || 0) ? ` · <span class="stock-count">Review restock of ${Number(product.restock_units)}</span>` : ''}</strong></div>`).join('');
-    document.getElementById('forecastInsight').innerHTML = !hasForecastHistory
-        ? '<strong>Forecast limits:</strong> No product sales were recorded in the 28-day forecast period, so a reliable demand estimate is not available. Review sales history; the Admin/Owner makes the final stock decision.'
-        : restockProducts.length
-            ? `<strong>Decision cue:</strong> ${restockProducts.length} product${restockProducts.length === 1 ? '' : 's'} may need a stock review for the next 7 days. The estimate uses 28 days of daily historical sales and linear regression, not an external AI service. Use it as a guide; the Admin/Owner decides whether to restock.`
-            : '<strong>Demand signal:</strong> current stock appears sufficient for the projected next 7 days. The estimate uses 28 days of daily historical sales and linear regression, not an external AI service. Use it as a guide; the Admin/Owner decides whether to restock.';
+    document.getElementById('categoryBars').innerHTML = !forecastProducts.length ?
+        '<p class="empty">No active products are available for forecasting.</p>' :
+        !hasForecastHistory ?
+        '<p class="empty">No product sales were recorded in the 28-day forecast period, so a reliable demand forecast is not available.</p>' :
+        forecastProducts.slice().sort((first, second) => Number(second.forecast_units || 0) - Number(first.forecast_units || 0)).slice(0, 8).map(product => `<div class="bar-row"><span>${escapeAdmin(product.product_name)}</span><div class="bar"><i style="width:${Math.round((Number(product.forecast_units || 0) / maxForecast) * 100)}%"></i></div><strong>${Number(product.forecast_units || 0)} units${Number(product.restock_units || 0) ? ` · <span class="stock-count">Review restock of ${Number(product.restock_units)}</span>` : ''}</strong></div>`).join('');
+    document.getElementById('forecastInsight').innerHTML = !hasForecastHistory ?
+        '<strong>Forecast limits:</strong> No product sales were recorded in the 28-day forecast period, so a reliable demand estimate is not available. Review sales history; the Admin/Owner makes the final stock decision.' :
+        restockProducts.length ?
+        `<strong>Decision cue:</strong> ${restockProducts.length} product${restockProducts.length === 1 ? '' : 's'} may need a stock review for the next 7 days. The estimate uses 28 days of daily historical sales and linear regression, not an external AI service. Use it as a guide; the Admin/Owner decides whether to restock.` :
+        '<strong>Demand signal:</strong> current stock appears sufficient for the projected next 7 days. The estimate uses 28 days of daily historical sales and linear regression, not an external AI service. Use it as a guide; the Admin/Owner decides whether to restock.';
 }
 
 async function setupDeliveryQueue() {
@@ -569,7 +669,10 @@ async function loadDeliveryQueue() {
     try {
         const response = await rsmApi('admin_delivery_data.php');
         const data = await response.json();
-        if (response.status === 401) { window.location.href = 'Admin_login.html'; return; }
+        if (response.status === 401) {
+            window.location.href = 'Admin_login.html';
+            return;
+        }
         if (!data.success) throw new Error(data.message || 'Could not load deliveries.');
         renderDelivery(data.orders);
     } catch (error) {
@@ -589,7 +692,11 @@ function renderDelivery(orders) {
         return `<tr><td>#${String(order.order_id).padStart(6, '0')}</td><td>${escapeAdmin(order.username)}</td><td>${escapeAdmin(order.delivery_address)}</td><td class="delivery-order-details"><strong>${escapeAdmin(order.payment_method)}</strong><span>${adminMoney(order.total_amount)}</span><time>${escapeAdmin(order.order_time)}</time></td><td class="delivery-status-cell"><span class="status-badge status-${escapeAdmin(order.order_status)}">${escapeAdmin(adminStatuses[order.order_status] || order.order_status)}</span><div class="delivery-status-actions">${nextStep ? `<button type="button" class="status-next" data-order-id="${order.order_id}" data-next-status="${nextStep.status}">${nextStep.label}</button>` : ''}<button type="button" class="status-cancel" data-order-id="${order.order_id}">Cancel order</button></div></td></tr>`;
     }).join('')}</tbody></table></div>`;
     document.getElementById('deliveryTable').innerHTML = groupedOrders.size ? [...groupedOrders.entries()].map(([date, dayOrders]) => {
-        const formattedDate = new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' });
+        const formattedDate = new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
         const dailyTotal = dayOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
         return `<section class="delivery-day-group"><div class="delivery-day-heading"><h4>${escapeAdmin(formattedDate)}</h4><span aria-hidden="true">-</span><strong>${adminMoney(dailyTotal)}</strong></div>${orderTable(dayOrders)}</section>`;
     }).join('') : '<p class="empty">No active deliveries.</p>';
@@ -609,7 +716,10 @@ async function loadSales() {
         await setupSaleForm();
         const response = await rsmApi('admin_sales_data.php');
         const data = await response.json();
-        if (response.status === 401) { window.location.href = 'Admin_login.html'; return; }
+        if (response.status === 401) {
+            window.location.href = 'Admin_login.html';
+            return;
+        }
         if (!data.success) throw new Error(data.message || 'Could not load sales.');
         const branchField = document.querySelector('#saleForm [name="branch"]');
         if (!branchField) throw new Error('The sales branch field is missing.');
@@ -631,7 +741,10 @@ let saleFormBound = false;
 async function setupSaleForm() {
     const response = await rsmApi('admin_products.php');
     const data = await response.json();
-    if (response.status === 401) { window.location.href = 'Admin_login.html'; return; }
+    if (response.status === 401) {
+        window.location.href = 'Admin_login.html';
+        return;
+    }
     if (!data.success) throw new Error(data.message || 'Could not load products for the sale form.');
     saleProducts = data.products.filter(product => Number(product.is_active) === 1);
     if (!saleFormBound) {
@@ -711,11 +824,16 @@ async function saveSale(event) {
     try {
         const response = await rsmApi('admin_sales_data.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(payload),
         });
         const result = await response.json();
-        if (response.status === 401) { window.location.href = 'Admin_login.html'; return; }
+        if (response.status === 401) {
+            window.location.href = 'Admin_login.html';
+            return;
+        }
         if (!result.success) throw new Error(result.message || 'Could not save the sale.');
         form.reset();
         message.textContent = result.message;
@@ -782,10 +900,16 @@ async function updateDeliveryStatus(orderId, status) {
     try {
         const response = await rsmApi('admin_update_order.php', {
             method: 'POST',
-            body: new URLSearchParams({ order_id: orderId, status }),
+            body: new URLSearchParams({
+                order_id: orderId,
+                status
+            }),
         });
         const result = await response.json();
-        if (response.status === 401) { window.location.href = 'Admin_login.html'; return; }
+        if (response.status === 401) {
+            window.location.href = 'Admin_login.html';
+            return;
+        }
         showToast(result.message);
         await loadDeliveryQueue();
     } catch (error) {
@@ -794,8 +918,17 @@ async function updateDeliveryStatus(orderId, status) {
 }
 
 function renderPerformance(data) {
-    const monthly = data.monthly || {}; const revenuePercent = Math.min(100, Math.round((Number(monthly.revenue || 0) / 100000) * 100)); const fulfillment = Number(data.fulfillment_rate || 0);
-    document.getElementById('revenue').textContent = adminMoney(monthly.revenue); document.getElementById('orders').textContent = monthly.order_count || 0; document.getElementById('deliveries').textContent = data.open_deliveries; document.getElementById('revenueBar').style.width = `${revenuePercent}%`; document.getElementById('revenueGoal').textContent = `${revenuePercent}%`; document.getElementById('fulfillmentBar').style.width = `${fulfillment}%`; document.getElementById('fulfillmentRate').textContent = `${fulfillment}%`; document.getElementById('performanceInsight').innerHTML = `<strong>Decision cue:</strong> fulfillment is at ${fulfillment}%. Keep the delivery desk clear to protect the branch experience.`;
+    const monthly = data.monthly || {};
+    const revenuePercent = Math.min(100, Math.round((Number(monthly.revenue || 0) / 100000) * 100));
+    const fulfillment = Number(data.fulfillment_rate || 0);
+    document.getElementById('revenue').textContent = adminMoney(monthly.revenue);
+    document.getElementById('orders').textContent = monthly.order_count || 0;
+    document.getElementById('deliveries').textContent = data.open_deliveries;
+    document.getElementById('revenueBar').style.width = `${revenuePercent}%`;
+    document.getElementById('revenueGoal').textContent = `${revenuePercent}%`;
+    document.getElementById('fulfillmentBar').style.width = `${fulfillment}%`;
+    document.getElementById('fulfillmentRate').textContent = `${fulfillment}%`;
+    document.getElementById('performanceInsight').innerHTML = `<strong>Decision cue:</strong> fulfillment is at ${fulfillment}%. Keep the delivery desk clear to protect the branch experience.`;
     loadBranchComparison();
     window.setInterval(() => {
         if (!document.hidden) loadBranchComparison();
@@ -811,9 +944,14 @@ async function loadBranchComparison() {
     branchComparisonRequestInProgress = true;
     const status = document.getElementById('branchComparisonStatus');
     try {
-        const response = await rsmApi('admin_branch_comparison.php', { cache: 'no-store' });
+        const response = await rsmApi('admin_branch_comparison.php', {
+            cache: 'no-store'
+        });
         const data = await response.json();
-        if (response.status === 401) { window.location.href = 'Admin_login.html'; return; }
+        if (response.status === 401) {
+            window.location.href = 'Admin_login.html';
+            return;
+        }
         if (!data.success) throw new Error(data.message || 'Could not load branch comparison.');
         renderBranchComparison(data.branches || []);
         status.textContent = `Updated at ${new Date().toLocaleTimeString()}. Refreshes every 15 seconds.`;
@@ -826,18 +964,18 @@ async function loadBranchComparison() {
 
 function renderBranchComparison(branchData) {
     const branches = branchData.map(data => {
-        const revenue = Number(data.revenue || 0);
-        const orders = Number(data.orders || 0);
-        const fulfillment = Number(data.fulfillment || 0);
-        return {
-            name: data.name,
-            revenue,
-            orders,
-            fulfillment,
-            open: Number(data.open || 0),
-            score: Math.round((revenue / 100000 * 40) + (fulfillment * 0.4) + (orders / 200 * 20)),
-        };
-    })
+            const revenue = Number(data.revenue || 0);
+            const orders = Number(data.orders || 0);
+            const fulfillment = Number(data.fulfillment || 0);
+            return {
+                name: data.name,
+                revenue,
+                orders,
+                fulfillment,
+                open: Number(data.open || 0),
+                score: Math.round((revenue / 100000 * 40) + (fulfillment * 0.4) + (orders / 200 * 20)),
+            };
+        })
         .sort((first, second) => second.score - first.score);
     if (!branches.length) {
         document.getElementById('branchComparison').innerHTML = '<p class="empty">No branch data is available.</p>';
@@ -846,4 +984,10 @@ function renderBranchComparison(branchData) {
     const highestRevenue = Math.max(...branches.map(branch => branch.revenue), 0);
     document.getElementById('branchComparison').innerHTML = `<div class="comparison-table"><div class="comparison-row comparison-heading"><span>Branch</span><span>Revenue</span><span>Orders</span><span>Fulfillment</span><span>Score</span></div>${branches.map((branch, index) => `<div class="comparison-row"><span class="branch-name"><b class="rank">${index + 1}</b>${escapeAdmin(branch.name)}</span><span>${adminMoney(branch.revenue)}<i class="mini-bar"><em style="width:${highestRevenue ? Math.round((branch.revenue / highestRevenue) * 100) : 0}%"></em></i></span><span>${branch.orders}</span><span>${branch.fulfillment}%</span><strong>${branch.score}</strong></div>`).join('')}</div><div class="comparison-summary"><span><b>Top branch</b> ${escapeAdmin(branches[0].name)}</span><span><b>Needs attention</b> ${escapeAdmin(branches[branches.length - 1].name)} · ${branches[branches.length - 1].open} open deliveries</span></div>`;
 }
-function showToast(message) { const toast = document.getElementById('toast'); toast.textContent = message || 'Updated'; toast.style.display = 'block'; setTimeout(() => toast.style.display = 'none', 2500); }
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message || 'Updated';
+    toast.style.display = 'block';
+    setTimeout(() => toast.style.display = 'none', 2500);
+}

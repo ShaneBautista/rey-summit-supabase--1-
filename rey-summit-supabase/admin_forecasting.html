@@ -1,4 +1,56 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Forecasting | Rey Summit</title><link rel="stylesheet" href="admin_sections.css?v=16">    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forecasting | Rey Summit</title>
+    <link rel="stylesheet" href="admin_sections.css?v=16">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-api.js"></script>
-</head><body data-page="forecasting"><div class="shell"><aside><div class="brand"><small>Rey Summit</small><h1>Operations Hub</h1></div><nav><a href="admin_dashboard.html">Overview</a><a href="admin_sales.html">Sales</a><a href="admin_inventory.html">Inventory</a><a class="active" href="admin_forecasting.html">Forecasting</a><a href="admin_performance.html">Branch performance</a><a href="staff_accounts.html">Staff accounts</a></nav><div class="aside-footer"><span id="adminGreeting">Signed in</span><a class="logout" href="admin_logout.php">Log out</a></div></aside><main><header class="topbar"><div><div class="kicker">Sales trend forecast</div><h2>Plan the next week.</h2><p class="intro">Historical sales data is analyzed with linear regression to estimate the next 7 days of demand and support restocking decisions. Forecasts are estimates; review them alongside current stock before taking action.</p></div><div class="date-chip" id="reportDate"></div></header><section class="grid"><article class="metric"><div class="metric-label">7-day revenue run rate</div><strong id="forecastRevenue">--</strong><span>Projected from recent sales</span></article><article class="metric"><div class="metric-label">7-day order run rate</div><strong id="forecastOrders">--</strong><span>Recent order count</span></article></section><section class="panel"><h3>Product demand forecast</h3><p class="panel-note">Projected units over the next 7 days, estimated from the selected branch's historical sales.</p><div id="categoryBars"><p class="empty">Loading forecast...</p></div></section><section class="panel"><div class="insight" id="forecastInsight">Preparing forecast insight...</div><p id="pageMessage" class="empty"></p></section></main></div><script src="admin_sections.js?v=17"></script></body></html>
+</head>
+
+<body data-page="forecasting">
+    <div class="shell">
+        <aside>
+            <div class="brand"><small>Rey Summit</small>
+                <h1>Operations Hub</h1>
+            </div>
+            <nav><a href="admin_dashboard.html">Overview</a><a href="admin_sales.html">Sales</a><a href="admin_inventory.html">Inventory</a><a class="active" href="admin_forecasting.html">Forecasting</a><a href="admin_performance.html">Branch performance</a><a href="staff_accounts.html">Staff accounts</a></nav>
+            <div class="aside-footer"><span id="adminGreeting">Signed in</span><a class="logout" href="admin_logout.php">Log out</a></div>
+        </aside>
+        <main>
+            <header class="topbar">
+                <div>
+                    <div class="kicker">Sales trend forecast</div>
+                    <h2>Plan the next week.</h2>
+                    <p class="intro">Historical sales data is analyzed with linear regression to estimate the next 7 days of demand and support restocking decisions. Forecasts are estimates; review them alongside current stock before taking action.</p>
+                </div>
+                <div class="date-chip" id="reportDate"></div>
+            </header>
+            <section class="grid">
+                <article class="metric">
+                    <div class="metric-label">7-day revenue run rate</div><strong id="forecastRevenue">--</strong><span>Projected from recent sales</span>
+                </article>
+                <article class="metric">
+                    <div class="metric-label">7-day order run rate</div><strong id="forecastOrders">--</strong><span>Recent order count</span>
+                </article>
+            </section>
+            <section class="panel">
+                <h3>Product demand forecast</h3>
+                <p class="panel-note">Projected units over the next 7 days, estimated from the selected branch's historical sales.</p>
+                <div id="categoryBars">
+                    <p class="empty">Loading forecast...</p>
+                </div>
+            </section>
+            <section class="panel">
+                <div class="insight" id="forecastInsight">Preparing forecast insight...</div>
+                <p id="pageMessage" class="empty"></p>
+            </section>
+        </main>
+    </div>
+    <script src="admin_sections.js?v=17"></script>
+</body>
+
+</html>

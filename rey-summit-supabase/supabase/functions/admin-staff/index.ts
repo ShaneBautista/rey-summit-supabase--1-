@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Edge Function: admin-staff
 // Creating / deleting staff logins needs the service-role key (Auth admin API),
 // so it can't run in the browser. Everything else about staff (list, activate/deactivate)
