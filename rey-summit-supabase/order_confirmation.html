@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Confirmed — Rey Summit</title>
+<link rel="stylesheet" href="shop.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-api.js"></script>
+</head>
+<body class="shop-body">
+
+    <header class="shop-topbar">
+        <div class="brand">
+            <img src="images/logo.png" alt="Rey Summit logo">
+            <span>Rey Summit</span>
+        </div>
+        <nav class="shop-nav">
+            <a href="customer_ordering.html">Back to Shop</a>
+        </nav>
+    </header>
+
+    <main class="confirm-shell">
+        <div class="confirm-hero">
+            <div class="check-circle">✓</div>
+            <h1 id="confirmationTitle">Order received</h1>
+            <p id="confirmationSubtitle">Thanks for your order — here's your confirmation.</p>
+        </div>
+
+        <div id="loadingBox" class="loading-state">Loading your order…</div>
+        <section id="paymentReviewMessage" class="receipt-card" style="display:none;" aria-live="polite">
+            <div class="receipt-body">
+                <strong id="paymentReviewTitle"></strong>
+                <p id="paymentReviewDescription"></p>
+                <form id="replacementProofForm" style="display:none;">
+                    <label for="replacementReference">GCash reference number</label>
+                    <input type="text" id="replacementReference" name="gcash_reference" maxlength="80" required>
+                    <label for="replacementProof">New proof of payment (JPG, PNG, or WebP; max 5 MB)</label>
+                    <input type="file" id="replacementProof" name="gcash_proof" accept="image/jpeg,image/png,image/webp" required>
+                    <button type="submit" class="payment-proof-submit">Submit</button>
+                </form>
+                <p id="replacementProofMessage" class="form-message" aria-live="polite"></p>
+            </div>
+        </section>
+
+        <!-- Unified receipt and order summary -->
+        <div class="receipt-card" id="receiptCard" style="display:none;">
+            <div class="receipt-head">🧾 E-Receipt</div>
+            <div class="receipt-body">
+                <div class="receipt-row"><span class="r-label">Order ID</span><span id="rOrderId">—</span></div>
+                <div class="receipt-row"><span class="r-label">Order Date</span><span id="rDate">—</span></div>
+                <div class="receipt-row"><span class="r-label">Status</span><span id="rStatus">—</span></div>
+                <div class="receipt-row" id="rDeliveredByRow" style="display:none;"><span class="r-label">Delivered by</span><span id="rDeliveredBy">—</span></div>
+                <div class="receipt-row"><span class="r-label">Delivery Address</span><span id="rAddress" style="text-align:right; max-width:60%;">—</span></div>
+
+                <div class="receipt-items" id="rItems"></div>
+
+                <div class="receipt-total"><span>Total</span><span id="rTotal">—</span></div>
+
+                <div class="receipt-summary">
+                    <h3>Order Summary</h3>
+                    <table class="dc-table">
+                        <thead>
+                            <tr><th>Item</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr>
+                        </thead>
+                        <tbody id="dItemsBody"></tbody>
+                    </table>
+                    <div class="dc-grand"><span>Total</span><span id="dTotal">—</span></div>
+                    <div class="dc-address">
+                        <span class="label">Delivery Address</span>
+                        <span id="dAddress">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order status below the unified receipt -->
+        <div class="desktop-confirm" id="desktopConfirm" style="display:none;">
+            <div class="dc-status-card">
+                <div class="check-circle">✓</div>
+                <h2>Order Placed</h2>
+                <div class="order-num" id="dOrderId">Order #—</div>
+                <div class="ship-status-sub" id="dStatus">—</div>
+                <div class="delivery-by" id="dDeliveredBy" style="display:none;">Delivered by: —</div>
+                <a class="dc-track-btn" id="dTrackLink" href="#">Track this Order</a>
+            </div>
+        </div>
+
+        <div id="errorBox" class="error-state" style="display:none;"></div>
+    </main>
+
+    <script src="confirmation.js?v=2"></script>
+</body>
+</html>

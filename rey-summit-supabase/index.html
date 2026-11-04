@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rey Summit Ordering System</title>
+    <link rel="stylesheet" href="style.css?v=4">
+    <style>
+        .entry-card { width:min(100%, 620px); padding:42px; background:#fff; border-radius:18px; box-shadow:0 18px 45px rgba(4,75,93,.22); text-align:center; }
+        .entry-card img { width:82px; height:82px; object-fit:contain; margin-bottom:14px; }
+        .entry-card h1 { margin:0 0 10px; color:#123d49; }
+        .entry-card p { color:#596d70; margin:0 0 26px; }
+        .entry-actions { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+        .entry-actions a { padding:14px 18px; border-radius:8px; text-decoration:none; font-weight:700; }
+        .entry-actions a:first-child { color:#fff; background:#087f73; }
+        .entry-actions a:nth-child(2) { color:#087f73; background:#e2f2ed; }
+        @media (max-width:520px) { .entry-card { padding:30px 20px; } .entry-actions { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+    <main class="entry-card">
+        <img src="images/logo.png" alt="Rey Summit logo">
+        <h1>Rey Summit Ordering System</h1>
+        <p>Order from the menu or manage inventory, forecasting, delivery, and branch performance.</p>
+        <div class="entry-actions">
+            <a href="Customer_Login.html">Customer ordering</a>
+            <a href="Admin_login.html">Admin &amp; staff operations</a>
+        </div>
+    </main>
+</body>
+</html>

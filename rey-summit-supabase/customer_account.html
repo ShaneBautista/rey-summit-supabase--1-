@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account — Rey Summit</title>
+<link rel="stylesheet" href="shop.css?v=9">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-api.js"></script>
+</head>
+<body class="shop-body">
+    <header class="shop-topbar">
+        <div class="brand">
+            <img src="images/logo.png" alt="Rey Summit logo">
+            <span>Rey Summit</span>
+        </div>
+        <nav class="shop-nav">
+            <a href="customer_ordering.html">Back to Shop</a>
+        </nav>
+    </header>
+
+    <main class="account-shell">
+        <p class="eyebrow">Account</p>
+        <h1>Your details</h1>
+        <p class="account-intro">Update your email, delivery address, and contact number.</p>
+
+        <section class="account-panel">
+            <form id="accountForm" class="account-form">
+                <label for="accountUsername">Username</label>
+                <input id="accountUsername" name="username" type="text" readonly>
+
+                <label for="accountEmail">Email</label>
+                <input id="accountEmail" name="email" type="email" maxlength="255" autocomplete="email" required>
+
+                <label for="accountBranch">Branch</label>
+                <select id="accountBranch" name="branch" required>
+                    <option value="" disabled>Select your branch</option>
+                    <option value="Alangilan">Alangilan</option>
+                    <option value="Sta Teresita">Sta Teresita</option>
+                    <option value="Mabini Lipa">Mabini Lipa</option>
+                    <option value="San Luis">San Luis</option>
+                </select>
+
+                <label for="accountAddress">Delivery address</label>
+                <textarea id="accountAddress" name="address" autocomplete="street-address" required></textarea>
+
+                <label for="accountPhone">Contact number</label>
+                <input id="accountPhone" name="phone" type="tel" inputmode="numeric" pattern="[0-9]{11}" maxlength="11" autocomplete="tel" required>
+
+                <p id="accountMessage" class="account-message" aria-live="polite"></p>
+                <button type="submit" class="account-save" id="accountSave">Save details</button>
+            </form>
+        </section>
+    </main>
+
+    <script src="customer_account.js?v=5"></script>
+</body>
+</html>

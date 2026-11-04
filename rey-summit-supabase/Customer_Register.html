@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="style.css?v=4">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-api.js"></script>
+</head>
+
+<body>
+    <div class="login-container register-container">
+        <div class="logo-badge">
+            <img class="brand-logo" src="images/logo.png" alt="RSNU logo">
+        </div>
+        <h2>Register</h2>
+        <form method="POST">
+            <p id="registerMessage" class="message error" role="alert" aria-live="polite"></p>
+
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" autocomplete="username" required>
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" autocomplete="email" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" minlength="8" oninvalid="this.setCustomValidity('Must be 8 characters long in password.')" oninput="this.setCustomValidity('')" autocomplete="new-password" required>
+
+            <label for="confirm-password">Confirm password:</label>
+            <input type="password" id="confirm-password" name="confirm_password" autocomplete="new-password" required>
+
+            <label for="address">Address:</label>
+            <textarea id="address" name="address" rows="2" autocomplete="street-address" required></textarea>
+
+            <label for="branch">Select branch:</label>
+            <select id="branch" name="branch" required>
+                <option value="" disabled selected>Choose your branch</option>
+                <option value="Alangilan">Alangilan</option>
+                <option value="Sta Teresita">Sta Teresita</option>
+                <option value="Mabini Lipa">Mabini Lipa</option>
+                <option value="San Luis">San Luis</option>
+            </select>
+
+            <label for="phone">Phone number:</label>
+            <input type="tel" id="phone" name="phone" class="phone-input" inputmode="numeric" pattern="09[0-9]{9}" minlength="11" maxlength="11" autocomplete="tel" title="Enter an 11-digit number starting with 09." required>
+
+            <button type="submit">Register</button>
+            <p>Already have an account? <a href="Customer_Login.html">Login here</a></p>
+        </form>
+    </div>
+
+    <script src="register.js?v=3"></script>
+
+</body>
+
+</html>

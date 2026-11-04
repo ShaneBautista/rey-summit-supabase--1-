@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery staff workspace | Rey Summit</title>
+    <link rel="stylesheet" href="admin_sections.css?v=8">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-api.js"></script>
+</head>
+<body data-workspace="delivery">
+    <div class="shell staff-shell">
+        <aside>
+            <div class="brand"><small>Rey Summit</small><h1>Delivery Desk</h1></div>
+            <div class="staff-profile"><span>Loading… · Delivery staff</span><strong></strong></div>
+            <div class="staff-queue-indicator"><i></i>Orders ready for delivery</div>
+            <div class="aside-footer"><span>Secure delivery session</span><a class="logout" href="staff_logout.php">Log out</a></div>
+        </aside>
+        <main>
+            <header class="topbar">
+                <div><div class="kicker">Delivery staff workspace</div><h2>Your delivery run.</h2><p class="intro">View customer, contact, address, payment, and order details. Mark each delivery complete after handoff.</p></div>
+                <div class="date-chip" id="reportDate"></div>
+            </header>
+            <section class="staff-metrics">
+                <article class="metric"><div class="metric-label">Deliveries to complete</div><strong id="staffOpenCount">0</strong><span>Orders in your queue</span></article>
+                <article class="metric"><div class="metric-label">Today’s deliveries</div><strong id="staffTodayCount">0</strong><span>Orders received today</span></article>
+                <article class="metric"><div class="metric-label">Delivery value</div><strong id="staffQueueValue">₱0.00</strong><span>Total in current queue</span></article>
+            </section>
+            <section class="panel staff-queue-panel">
+                <div class="panel-head"><div><h3>Shared delivery queue</h3><p class="panel-note">Orders appear here as soon as sales starts preparation. Mark them out for delivery, then complete them after handoff.</p></div><button type="button" class="secondary-button" id="refreshStaffOrders">Refresh deliveries</button></div>
+                <div id="staffOrderQueue"><p class="empty">Loading delivery queue...</p></div>
+                <p id="staffMessage" class="empty" aria-live="polite"></p>
+            </section>
+        </main>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+    <script src="staff_workspace.js?v=2"></script>
+</body>
+</html>

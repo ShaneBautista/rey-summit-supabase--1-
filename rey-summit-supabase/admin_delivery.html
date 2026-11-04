@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Delivery Desk | Rey Summit</title>
+	<link rel="stylesheet" href="admin_sections.css?v=13">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-api.js"></script>
+</head>
+<body data-page="delivery">
+	<div class="shell">
+		<aside>
+			<div class="brand"><small>Rey Summit</small><h1>Operations Hub</h1></div>
+			<nav>
+				<a href="admin_dashboard.html">Overview</a>
+				<a href="admin_inventory.html">Inventory</a>
+				<a href="admin_forecasting.html">Forecasting</a>
+				<a class="active" href="admin_performance.html">Branch performance</a>
+				<a href="staff_accounts.html">Staff accounts</a>
+			</nav>
+			<div class="aside-footer"><span id="adminGreeting">Signed in</span><a class="logout" href="admin_logout.php">Log out</a></div>
+		</aside>
+		<main>
+			<header class="topbar">
+				<div><div class="kicker">Rider dispatch</div><h2>Keep every order moving.</h2><p class="intro">Update the customer-facing delivery stage as orders move through the branch.</p></div>
+				<div class="date-chip" id="reportDate"></div>
+			</header>
+			<section class="panel">
+				<div class="panel-head delivery-panel-head">
+					<h3>Active delivery queue</h3>
+					<span class="panel-note">Changes save immediately</span>
+				</div>
+				<div id="deliveryTable"><p class="empty">Loading delivery queue...</p></div>
+				<p id="pageMessage" class="empty"></p>
+			</section>
+		</main>
+	</div>
+	<div class="toast" id="toast"></div>
+	<script src="admin_sections.js?v=14"></script>
+</body>
+</html>

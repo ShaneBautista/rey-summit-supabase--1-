@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — Rey Summit</title>
+<link rel="stylesheet" href="shop.css?v=10">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-api.js"></script>
+</head>
+<body class="shop-body">
+
+    <header class="shop-topbar">
+        <div class="brand">
+            <img src="images/logo.png" alt="Rey Summit logo">
+            <span>Rey Summit</span>
+        </div>
+
+        <nav class="shop-nav customer-actions" aria-label="Customer actions">
+            <button type="button" id="logoutTrigger" class="logout-btn" aria-haspopup="dialog" aria-controls="logoutModal">Log out</button>
+        </nav>
+    </header>
+
+    <div class="modal-overlay" id="logoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
+        <div class="modal-card logout-confirm-card">
+            <h2 id="logoutTitle">Log out?</h2>
+            <p>Are you sure you want to log out of your account?</p>
+            <form action="customer_logout.php" method="post" class="modal-actions logout-form-actions">
+                <button type="button" class="cancel-btn" id="cancelLogout">Cancel</button>
+                <button type="submit" class="confirm-btn">Confirm</button>
+            </form>
+        </div>
+    </div>
+
+    <main class="shop-shell">
+        <!-- Left Sidebar (Desktop only) -->
+        <aside class="left-sidebar">
+            <nav class="sidebar-nav">
+                <a href="customer_ordering.html" class="nav-link active">
+                    <span class="nav-icon">🏠</span>
+                    <span>Home page</span>
+                </a>
+                <button type="button" class="nav-link sidebar-cart-button" id="desktopNavCart" aria-label="Cart, 0 items">
+                    <span class="nav-icon">🛒</span>
+                    <span>Cart</span>
+                    <span class="sidebar-cart-count" id="cartCount"></span>
+                </button>
+                <a href="order_history.html" class="nav-link">
+                    <span class="nav-icon">📦</span>
+                    <span>History</span>
+                </a>
+                <a href="track_order.html" class="nav-link">
+                    <span class="nav-icon">🗺️</span>
+                    <span>Order tracking</span>
+                </a>
+                <a href="customer_account.html" class="nav-link">
+                    <span class="nav-icon">👤</span>
+                    <span>Account</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Center Content -->
+        <section class="center-content">
+            <p class="eyebrow">Catalog</p>
+            <h1>What would you like to order?</h1>
+
+            <div class="category-chips" id="categoryChips"></div>
+
+            <div class="product-grid" id="productGrid">
+                <div class="loading-state">Loading products…</div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Mobile floating cart bar -->
+    <div class="mobile-cart-bar" id="mobileCartBar">
+        <span id="mobileCartLabel">0 items</span>
+        <span id="mobileCartTotal">₱0.00</span>
+    </div>
+
+    <!-- Shared cart drawer -->
+    <div class="modal-overlay" id="cartModal">
+        <div class="modal-card">
+            <h2>Your Cart</h2>
+            <div class="cart-items" id="cartItemsDrawer">
+                <p class="cart-empty">Your cart is empty.</p>
+            </div>
+            <div class="cart-totals">
+                <div class="row-between"><span>Subtotal</span><span id="drawerSubtotal">₱0.00</span></div>
+                <div class="grand"><span>Total</span><span id="drawerTotal">₱0.00</span></div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" id="closeCartDrawer">Close</button>
+                <button type="button" class="confirm-btn" id="drawerCheckoutBtn" disabled>Checkout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout modal -->
+    <div class="modal-overlay" id="checkoutModal">
+        <div class="modal-card">
+            <h2>Delivery details</h2>
+            <form id="checkoutForm">
+                <label for="deliveryAddress">Delivery address</label>
+                <textarea id="deliveryAddress" name="delivery_address" placeholder="Loading account address..." readonly required></textarea>
+
+                <label for="contactPhone">Contact number</label>
+                <input type="tel" id="contactPhone" name="contact_phone" placeholder="Loading account phone..." readonly required>
+                <p id="checkoutAccountMessage" class="form-message" aria-live="polite">Loading account details...</p>
+
+                <label for="paymentMethod">Payment method</label>
+                <select id="paymentMethod" name="payment_method" required>
+                    <option value="" disabled selected>Select payment method</option>
+                    <option value="cash">Cash</option>
+                    <option value="gcash">GCash</option>
+                </select>
+
+                <div id="gcashPaymentFields" hidden>
+                    <p class="form-message">Upload your GCash receipt. Sales staff will verify the payment before confirming your order.</p>
+                    <label for="gcashReference">GCash reference number</label>
+                    <input type="text" id="gcashReference" name="gcash_reference" maxlength="80" autocomplete="off">
+                    <label for="gcashProof">Proof of payment (JPG, PNG, or WebP; max 5 MB)</label>
+                    <input type="file" id="gcashProof" name="gcash_proof" accept="image/jpeg,image/png,image/webp">
+                </div>
+
+                <p class="form-message" id="checkoutMessage" aria-live="polite"></p>
+
+                <div class="modal-actions">
+                    <button type="button" class="cancel-btn" id="cancelCheckout">Cancel</button>
+                    <button type="submit" class="confirm-btn" id="placeOrderBtn">Place Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <a href="customer_ordering.html" class="nav-item active" data-page="shop">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Shop</span>
+        </a>
+        <a href="#cart" class="nav-item" id="mobileNavCart" data-page="cart">
+            <span class="nav-icon">🛒</span>
+            <span class="nav-label">Cart</span>
+            <span class="nav-badge" id="navCartCount">0</span>
+        </a>
+        <a href="track_order.html" class="nav-item" data-page="orders">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Order tracking</span>
+        </a>
+        <a href="order_history.html" class="nav-item" data-page="history">
+            <span class="nav-icon">🧾</span>
+            <span class="nav-label">History</span>
+        </a>
+        <a href="customer_account.html" class="nav-item" data-page="account">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">Account</span>
+        </a>
+    </nav>
+
+    <script src="ordering.js?v=17"></script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overview | Rey Summit</title>
+    <link rel="stylesheet" href="admin_sections.css?v=16">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-api.js"></script>
+</head>
+<body data-page="overview">
+    <div class="shell">
+        <aside>
+            <div class="brand">
+                <small>Rey Summit</small>
+                <h1>Operations Hub</h1>
+            </div>
+            <nav>
+                <a class="active" href="admin_dashboard.html">Overview</a>
+                <a href="admin_sales.html">Sales</a>
+                <a href="admin_inventory.html">Inventory</a>
+                <a href="admin_forecasting.html">Forecasting</a>
+                <a href="admin_performance.html">Branch performance</a>
+                <a href="staff_accounts.html">Staff accounts</a>
+            </nav>
+            <div class="aside-footer">
+                <span id="adminGreeting">Signed in</span>
+                <a class="logout" href="admin_logout.php">Log out</a>
+            </div>
+        </aside>
+
+        <main>
+            <section class="panel branch-filter-panel">
+                <label for="adminBranchFilter">Viewing branch</label>
+                <select id="adminBranchFilter">
+                    <option value="all">All branches</option>
+                    <option value="Alangilan">Alangilan</option>
+                    <option value="Sta Teresita">Sta Teresita</option>
+                    <option value="Mabini Lipa">Mabini Lipa</option>
+                    <option value="San Luis">San Luis</option>
+                </select>
+                <span id="adminBranchFilterStatus" aria-live="polite"></span>
+            </section>
+            <section class="panel analytics-panel" aria-labelledby="analyticsTitle">
+                <h3 id="analyticsTitle">Business analytics</h3>
+                <p class="panel-note">Sales and order activity from your database</p>
+                <div class="revenue-panel">
+                    <div class="analytics-heading">
+                        <div>
+                            <h4>Revenue trend</h4>
+                            <p>Daily sales · last 7 days</p>
+                        </div>
+                        <span class="chart-legend"><i></i>Revenue</span>
+                    </div>
+                    <div id="revenueChart" class="revenue-chart">
+                        <p class="empty">Loading revenue trend...</p>
+                    </div>
+                </div>
+                <div class="analytics-grid">
+                    <section class="analytics-card" aria-labelledby="orderStatusTitle">
+                        <div class="analytics-heading">
+                            <div>
+                                <h4 id="orderStatusTitle">Order status</h4>
+                                <p>This month</p>
+                            </div>
+                        </div>
+                        <div id="orderStatusChart" class="order-status-chart">
+                            <p class="empty">Loading order statuses...</p>
+                        </div>
+                    </section>
+                    <section class="analytics-card" aria-labelledby="topProductsTitle">
+                        <div class="analytics-heading">
+                            <div>
+                                <h4 id="topProductsTitle">Top products</h4>
+                                <p>Units sold · last 30 days</p>
+                            </div>
+                        </div>
+                        <div id="topProductsChart" class="top-products-chart">
+                            <p class="empty">Loading top products...</p>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <section class="panel dss-panel" aria-labelledby="dssTitle">
+                <div class="panel-head">
+                    <div>
+                        <h3 id="dssTitle">Decision-support insights</h3>
+                        <p class="panel-note">Sales, forecast, inventory, branch, and delivery signals to inform your next steps. “All branches” combines their sales and stock.</p>
+                    </div>
+                </div>
+                <div id="dssInsights" class="dss-insights" aria-live="polite">
+                    <p class="empty">Preparing decision-support insights...</p>
+                </div>
+                <p id="dssBranchInsight" class="dss-branch-insight" aria-live="polite"></p>
+                <p class="dss-disclaimer">These are data-based estimates and recommendations only. The Admin/Owner makes all final decisions.</p>
+            </section>
+
+            <section class="panel operations-panel" aria-labelledby="operationsTitle">
+                <h3 id="operationsTitle">Operations areas</h3>
+                <div class="operations-grid">
+                    <a class="operation-card" href="admin_inventory.html">
+                        <span class="operation-label">Inventory</span>
+                        <strong>Stock control</strong>
+                        <span class="operation-link">View low-stock products</span>
+                    </a>
+                    <a class="operation-card" href="admin_forecasting.html">
+                        <span class="operation-label">Forecasting</span>
+                        <strong>Demand planning</strong>
+                        <span class="operation-link">Review recent run rate</span>
+                    </a>
+                    <a class="operation-card" href="admin_performance.html">
+                        <span class="operation-label">Branch performance</span>
+                        <strong>Scorecard</strong>
+                        <span class="operation-link">Review branch health</span>
+                    </a>
+                    <a class="operation-card" href="staff_accounts.html">
+                        <span class="operation-label">Team access</span>
+                        <strong>Staff accounts</strong>
+                        <span class="operation-link">Create sales and delivery logins</span>
+                    </a>
+                </div>
+                <p id="pageMessage" class="empty" aria-live="polite"></p>
+            </section>
+        </main>
+    </div>
+    <script src="admin_sections.js?v=17"></script>
+</body>
+</html>

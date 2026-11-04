@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track Order — Rey Summit</title>
+<link rel="stylesheet" href="shop.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-api.js"></script>
+</head>
+<body class="shop-body">
+
+    <header class="shop-topbar">
+        <div class="brand">
+            <img src="images/logo.png" alt="Rey Summit logo">
+            <span>Rey Summit</span>
+        </div>
+        <nav class="shop-nav">
+            <a href="customer_ordering.html">Back to Shop</a>
+        </nav>
+    </header>
+
+    <main class="track-shell">
+        <div id="ordersListBox"></div>
+        <div id="loadingBox" class="loading-state" style="display:none;">Loading order status…</div>
+        <div id="errorBox" class="error-state" style="display:none;"></div>
+
+        <div class="tracking-wrap" id="trackingWrap">
+            <!-- Desktop: logistics shipping card -->
+            <div class="ship-card">
+                <div class="ship-carrier">
+                    <span class="carrier-name">REY SUMMIT LOGISTICS</span>
+                    <span>📦</span>
+                </div>
+                <div class="ship-id" id="shipOrderId">Tracking No: —</div>
+
+                <div class="ship-status-big" id="shipStatusBig">—</div>
+                <div class="ship-status-sub" id="shipStatusSub">—</div>
+
+                <div class="shipment-route" aria-label="Delivery route">
+                    <div class="route-line"><span id="routeProgress" aria-hidden="true"></span></div>
+                    <span class="route-runner" id="routeRunner" aria-hidden="true">🚚</span>
+                    <div class="route-stop route-origin"><span class="route-dot"></span><span>Rey Summit</span></div>
+                    <div class="route-stop route-destination"><span class="route-dot"></span><span>Delivery address</span></div>
+                </div>
+                <div class="route-caption" id="routeCaption">Preparing shipment details</div>
+
+                <div class="ship-meta">
+                    <div>
+                        <div class="label">Ordered By</div>
+                        <div id="shipCustomer">—</div>
+                    </div>
+                    <div>
+                        <div class="label">Delivery Address</div>
+                        <div id="shipAddress">—</div>
+                    </div>
+                    <div>
+                        <div class="label">Shipment Value</div>
+                        <div id="shipTotal">—</div>
+                    </div>
+                </div>
+
+                <div class="ship-actions">
+                    <a href="#" id="shipReceiptLink">View Receipt</a>
+                    <button type="button" id="shipRefreshBtn">Refresh</button>
+                </div>
+            </div>
+
+            <!-- Desktop: timeline card -->
+            <div class="timeline-card">
+                <h3>Tracking History</h3>
+                <ul class="timeline" id="timelineList"></ul>
+            </div>
+
+            <!-- Mobile: stepper card -->
+            <div class="mobile-stepper" id="mobileStepper">
+                <div class="ms-head">
+                    <span>📦</span>
+                    <span>Order Status</span>
+                </div>
+                <div class="ms-body" id="mobileStepperBody"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="tracking.js?v=2"></script>
+</body>
+</html>

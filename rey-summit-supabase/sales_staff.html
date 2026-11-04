@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales order processing | Rey Summit</title>
+    <link rel="stylesheet" href="admin_sections.css?v=9">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-api.js"></script>
+</head>
+<body data-workspace="sales">
+    <div class="shell staff-shell">
+        <aside>
+            <div class="brand"><small>Rey Summit</small><h1>Team Desk</h1></div>
+            <div class="staff-profile"><span>Loading… · Sales staff</span><strong></strong></div>
+            <div class="aside-footer"><span>Secure staff session</span><a class="logout" href="staff_logout.php">Log out</a></div>
+        </aside>
+        <main>
+            <header class="topbar">
+                <div><div class="kicker">Sales order processing</div><h2>Keep every order moving.</h2><p class="intro">Confirm new orders. Starting preparation sends the order straight to the delivery team.</p></div>
+                <div class="date-chip" id="reportDate"></div>
+            </header>
+            <section class="staff-metrics">
+                <article class="metric"><div class="metric-label">Open orders</div><strong id="staffOpenCount">0</strong><span>In your queue</span></article>
+                <article class="metric"><div class="metric-label">Needs confirmation</div><strong id="staffPendingCount">0</strong><span>New orders</span></article>
+                <article class="metric"><div class="metric-label">Ready to prepare</div><strong id="staffConfirmedCount">0</strong><span>Confirmed orders</span></article>
+            </section>
+            <section class="panel staff-queue-panel">
+                <div class="panel-head"><div><h3>Sales order queue</h3><p class="panel-note">Advance each order when its current step is complete.</p></div><button type="button" class="secondary-button" id="refreshStaffOrders">Refresh</button></div>
+                <div id="staffOrderQueue"><p class="empty">Loading your order queue...</p></div>
+                <p id="staffMessage" class="empty" aria-live="polite"></p>
+            </section>
+        </main>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+    <script src="staff_workspace.js?v=4"></script>
+</body>
+</html>
