@@ -320,6 +320,7 @@ async function manageStaffAccount(staffId, action) {
 
 let inventoryProducts = [];
 let inventoryEventsBound = false;
+let inventoryBranch = 'all';
 async function loadInventory() {
     const response = await rsmApi('admin_products.php');
     const data = await response.json();
@@ -329,11 +330,16 @@ async function loadInventory() {
     }
     if (!data.success) throw new Error(data.message || 'Could not load products.');
     const productSubmit = document.getElementById('productSubmit');
+    const productForm = document.getElementById('productForm');
     const formMessage = document.getElementById('formMessage');
-    productSubmit.disabled = data.branch === 'all';
+    inventoryBranch = data.branch || 'all';
+    productSubmit.disabled = inventoryBranch === 'all';
+    productForm.querySelectorAll('input:not([type="hidden"]), textarea').forEach(field => {
+        field.disabled = inventoryBranch === 'all';
+    });
     if (data.branch === 'all') {
-        formMessage.textContent = 'Select an individual branch on Overview to manage its stock.';
-    } else if (formMessage.textContent === 'Select an individual branch on Overview to manage its stock.') {
+        formMessage.textContent = 'All-branches view is read-only. Select a branch to edit its stock.';
+    } else if (formMessage.textContent === 'All-branches view is read-only. Select a branch to edit its stock.') {
         formMessage.textContent = '';
     }
     inventoryProducts = data.products;
@@ -347,16 +353,18 @@ async function loadInventory() {
 }
 
 function drawInventory(filter = document.getElementById('inventoryFilter').value) {
+    const normalizedFilter = filter === 'low' || filter === 'healthy' ? filter : 'all';
     const rows = inventoryProducts.filter(product => {
         const active = Number(product.is_active) === 1;
-        return filter === 'archived' ? !active : active && (filter === 'all' || (filter === 'low' && Number(product.stock_qty) <= 10) || (filter === 'healthy' && Number(product.stock_qty) > 10));
+        return active && (normalizedFilter === 'all' || (normalizedFilter === 'low' && Number(product.stock_qty) <= 10) || (normalizedFilter === 'healthy' && Number(product.stock_qty) > 10));
     });
-    document.getElementById('inventoryTable').innerHTML = rows.length ? `<div class="table-scroll"><table><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(product => `<tr class="${Number(product.stock_qty) <= 10 && Number(product.is_active) ? 'stock-low' : ''}"><td><strong>${escapeAdmin(product.product_name)}</strong>${product.description ? `<small class="product-description">${escapeAdmin(product.description)}</small>` : ''}</td><td>${adminMoney(product.price)}</td><td class="stock-count">${product.stock_qty}</td><td>${Number(product.is_active) ? (Number(product.stock_qty) <= 10 ? 'Restock soon' : 'Healthy') : 'Archived'}</td><td class="product-actions">${Number(product.is_active) ? `<button type="button" class="text-button" data-edit="${product.product_id}">Edit</button><button type="button" class="text-button danger" data-delete="${product.product_id}">Delete</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No products match this filter.</p>';
+    document.getElementById('inventoryTable').innerHTML = rows.length ? `<div class="table-scroll"><table><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(product => `<tr class="${Number(product.stock_qty) <= 10 && Number(product.is_active) ? 'stock-low' : ''}"><td><strong>${escapeAdmin(product.product_name)}</strong>${product.description ? `<small class="product-description">${escapeAdmin(product.description)}</small>` : ''}</td><td>${adminMoney(product.price)}</td><td class="stock-count">${product.stock_qty}</td><td>${Number(product.stock_qty) <= 10 ? 'Restock soon' : 'Healthy'}</td><td class="product-actions">${inventoryBranch === 'all' ? '—' : `<button type="button" class="text-button" data-edit="${product.product_id}">Edit</button><button type="button" class="text-button danger" data-delete="${product.product_id}">Delete</button>`}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No products match this filter.</p>';
     document.querySelectorAll('[data-edit]').forEach(button => button.addEventListener('click', () => editProduct(button.dataset.edit)));
     document.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', () => deleteProduct(button.dataset.delete)));
 }
 
 function editProduct(id) {
+    if (inventoryBranch === 'all') return;
     const product = inventoryProducts.find(item => String(item.product_id) === String(id));
     if (!product) return;
     const form = document.getElementById('productForm');
@@ -381,6 +389,10 @@ function resetProductForm() {
 
 async function saveProduct(event) {
     event.preventDefault();
+    if (inventoryBranch === 'all') {
+        document.getElementById('formMessage').textContent = 'Select one branch before changing its inventory.';
+        return;
+    }
     const form = event.currentTarget;
     const payload = Object.fromEntries(new FormData(form).entries());
     payload.action = payload.product_id ? 'update' : 'create';
@@ -407,8 +419,9 @@ async function saveProduct(event) {
 }
 
 async function deleteProduct(id) {
+    if (inventoryBranch === 'all') return;
     const product = inventoryProducts.find(item => String(item.product_id) === String(id));
-    if (!product || !window.confirm(`Delete “${product.product_name}” from the active catalogue?`)) return;
+    if (!product || !window.confirm(`Remove “${product.product_name}” from ${inventoryBranch}'s catalogue?`)) return;
     try {
         const response = await rsmApi('admin_products.php', {
             method: 'POST',
@@ -645,6 +658,13 @@ function renderForecast(data) {
     document.querySelector('#forecastOrders').nextElementSibling.textContent = 'Linear regression estimate';
     document.getElementById('forecastRevenue').textContent = adminMoney(forecastValue);
     document.getElementById('forecastOrders').textContent = forecastUnits.toLocaleString();
+    const accuracy = data.forecast_accuracy || {};
+    const hasAccuracy = Number.isFinite(Number(accuracy.mae)) && Number(accuracy.observations) > 0;
+    const evaluatedProducts = Number(accuracy.evaluated_products);
+    document.getElementById('forecastMae').textContent = hasAccuracy ? `${Number(accuracy.mae).toFixed(2)} units` : 'N/A';
+    document.getElementById('forecastMaeNote').textContent = hasAccuracy ?
+        `Avg units error / product-day · ${evaluatedProducts} product${evaluatedProducts === 1 ? '' : 's'}` :
+        'No sales available for backtesting';
     document.querySelector('#categoryBars').previousElementSibling.textContent = 'Product demand forecast';
     const hasForecastHistory = forecastProducts.some(product => Number(product.historical_units || 0) > 0);
     document.getElementById('categoryBars').innerHTML = !forecastProducts.length ?

@@ -96,6 +96,9 @@
     function addForecast(data) {
         const history = data.daily_history || {};
         const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - 27);
+        const sum = (a) => a.reduce((x, y) => x + y, 0);
+        const accuracyErrors = [];
+        let evaluatedProducts = 0;
         data.forecast_products = (data.forecast_products || []).map(p => {
             const byDay = history[String(p.product_id)] || {};
             const series = [];
@@ -103,7 +106,13 @@
                 const d = new Date(start); d.setDate(start.getDate() + i);
                 series.push(Number(byDay[ymd(d)] || 0));
             }
-            const sum = (a) => a.reduce((x, y) => x + y, 0);
+            if (sum(series) > 0) {
+                evaluatedProducts++;
+                const backtest = linearForecast(series.slice(0, 21));
+                for (let i = 0; i < 7; i++) {
+                    accuracyErrors.push(Math.abs(series[i + 21] - backtest[i]));
+                }
+            }
             const projected = linearForecast(series);
             const forecastUnits = Math.round(sum(projected));
             return {
@@ -116,6 +125,11 @@
                 forecast_series: projected.map(v => Math.trunc(v)),
             };
         });
+        data.forecast_accuracy = {
+            mae: accuracyErrors.length ? sum(accuracyErrors) / accuracyErrors.length : null,
+            evaluated_products: evaluatedProducts,
+            observations: accuracyErrors.length,
+        };
         delete data.daily_history;
         return data;
     }

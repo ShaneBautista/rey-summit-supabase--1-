@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forecasting | Rey Summit</title>
-    <link rel="stylesheet" href="admin_sections.css?v=16">
+    <link rel="stylesheet" href="admin_sections.css?v=17">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-api.js"></script>
@@ -25,16 +25,19 @@
                 <div>
                     <div class="kicker">Sales trend forecast</div>
                     <h2>Plan the next week.</h2>
-                    <p class="intro">Historical sales data is analyzed with linear regression to estimate the next 7 days of demand and support restocking decisions. Forecasts are estimates; review them alongside current stock before taking action.</p>
+                    <p class="intro">Historical sales data is analyzed with linear regression to estimate the next 7 days of demand. Forecast MAE is measured against a 7-day holdout of recent sales to show how the model performed. Forecasts are estimates; review them alongside current stock before taking action.</p>
                 </div>
                 <div class="date-chip" id="reportDate"></div>
             </header>
-            <section class="grid">
+            <section class="grid forecast-metrics">
                 <article class="metric">
                     <div class="metric-label">7-day revenue run rate</div><strong id="forecastRevenue">--</strong><span>Projected from recent sales</span>
                 </article>
                 <article class="metric">
                     <div class="metric-label">7-day order run rate</div><strong id="forecastOrders">--</strong><span>Recent order count</span>
+                </article>
+                <article class="metric">
+                    <div class="metric-label">7-day holdout MAE</div><strong id="forecastMae">--</strong><span id="forecastMaeNote">Average error per product-day</span>
                 </article>
             </section>
             <section class="panel">
@@ -50,7 +53,7 @@
             </section>
         </main>
     </div>
-    <script src="admin_sections.js?v=17"></script>
+    <script src="admin_sections.js?v=18"></script>
 </body>
 
 </html>

@@ -29,6 +29,17 @@
                 </div>
                 <div class="date-chip" id="reportDate"></div>
             </header>
+            <section class="panel branch-filter-panel">
+                <label for="adminBranchFilter">Viewing branch</label>
+                <select id="adminBranchFilter">
+                    <option value="all">All branches</option>
+                    <option value="Alangilan">Alangilan</option>
+                    <option value="Sta Teresita">Sta Teresita</option>
+                    <option value="Mabini Lipa">Mabini Lipa</option>
+                    <option value="San Luis">San Luis</option>
+                </select>
+                <span id="adminBranchFilterStatus" aria-live="polite"></span>
+            </section>
             <section class="panel">
                 <div class="panel-head">
                     <h3 id="productFormTitle">Add a product</h3>
@@ -44,7 +55,6 @@
                         <option value="all">All products</option>
                         <option value="low">Low stock only</option>
                         <option value="healthy">Healthy stock</option>
-                        <option value="archived">Archived</option>
                     </select>
                 </div>
                 <div id="inventoryTable">
@@ -55,7 +65,7 @@
         </main>
     </div>
     <div id="toast" class="toast" role="status"></div>
-    <script src="admin_sections.js?v=16"></script>
+    <script src="admin_sections.js?v=18"></script>
 </body>
 
 </html>

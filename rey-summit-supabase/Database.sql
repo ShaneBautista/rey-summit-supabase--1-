@@ -405,6 +405,10 @@ begin
                    on v_is_customer and pbs.product_id = p.product_id and pbs.branch = v_branch
             left join public.product_categories c on c.category_id = p.category_id
             where p.is_active
+              and (not v_is_customer or exists (
+                  select 1 from public.product_branch_stock branch_stock
+                   where branch_stock.product_id = p.product_id and branch_stock.branch = v_branch
+              ))
         ) x
     ), '[]'::jsonb));
 end $$;
@@ -1253,7 +1257,12 @@ begin
                      coalesce(sum(pbs.stock_qty), 0) as stock
                 from public.products p
                 left join public.product_branch_stock pbs
-                       on pbs.product_id = p.product_id and (v_b = 'all' or pbs.branch = v_b)
+                  on pbs.product_id = p.product_id and (v_b = 'all' or pbs.branch = v_b)
+               where p.is_active
+                 and (v_b = 'all' or exists (
+                     select 1 from public.product_branch_stock branch_stock
+                      where branch_stock.product_id = p.product_id and branch_stock.branch = v_b
+                 ))
                group by p.product_id, p.product_name, p.description, p.price, p.is_active) q
     ), '[]'::jsonb));
 end $$;
@@ -1270,18 +1279,22 @@ declare
     v_desc text := trim(coalesce(p_input->>'description', ''));
     v_price numeric;
     v_stock int;
+    v_existing_active boolean;
 begin
     if not public.rsm_is_admin() then return public.rsm_fail('Admin login required.', 401); end if;
+    if v_b = 'all' then return public.rsm_fail('Choose one branch before changing its inventory.', 422); end if;
 
     if v_action = 'delete' then
         if v_id is null or v_id < 1 then return public.rsm_fail('A valid product is required.', 422); end if;
-        update public.products set is_active = false where product_id = v_id and is_active;
+        delete from public.product_branch_stock where product_id = v_id and branch = v_b;
         if not found then return public.rsm_fail('Product not found or already deleted.', 404); end if;
-        return jsonb_build_object('success', true, 'message', 'Product deleted from the active catalogue.');
+        update public.products set is_active = false
+         where product_id = v_id and is_active
+           and not exists (select 1 from public.product_branch_stock where product_id = v_id);
+        return jsonb_build_object('success', true, 'message', 'Product removed from this branch.');
     end if;
 
     if v_action not in ('create', 'update') then return public.rsm_fail('Unknown product action.', 400); end if;
-    if v_b = 'all' then return public.rsm_fail('Choose one branch before changing its inventory.', 422); end if;
     if v_action = 'update' and (v_id is null or v_id < 1) then
         return public.rsm_fail('A valid product is required.', 422);
     end if;
@@ -1299,15 +1312,39 @@ begin
         return public.rsm_fail('Enter a price above 0 and a stock quantity of 0 or more.', 422);
     end if;
 
-    if exists (select 1 from public.products
-               where lower(trim(product_name)) = lower(v_name)
-                 and (v_action = 'create' or product_id <> v_id)) then
+    if v_action = 'update' and exists (
+        select 1 from public.products
+         where lower(trim(product_name)) = lower(v_name)
+           and product_id <> v_id
+    ) then
         return public.rsm_fail('A product with this name already exists.', 409);
     end if;
 
     if v_action = 'create' then
-        insert into public.products (product_name, description, price, stock_qty)
-        values (v_name, v_desc, v_price, 0) returning product_id into v_id;
+        select p.product_id, p.is_active
+          into v_id, v_existing_active
+          from public.products p
+         where lower(trim(p.product_name)) = lower(v_name)
+         order by p.is_active desc, p.product_id
+         limit 1
+         for update;
+
+        if found then
+            if v_existing_active and exists (
+                select 1 from public.product_branch_stock
+                 where product_id = v_id and branch = v_b
+            ) then
+                return public.rsm_fail('A product with this name already exists in this branch.', 409);
+            end if;
+            if not v_existing_active then
+                update public.products
+                   set product_name = v_name, description = v_desc, price = v_price, is_active = true
+                 where product_id = v_id;
+            end if;
+        else
+            insert into public.products (product_name, description, price, stock_qty)
+            values (v_name, v_desc, v_price, 0) returning product_id into v_id;
+        end if;
     else
         update public.products set product_name = v_name, description = v_desc, price = v_price
          where product_id = v_id and is_active;
