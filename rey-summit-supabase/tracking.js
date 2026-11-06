@@ -42,7 +42,9 @@ async function loadMyOrders() {
             return;
         }
 
-        const trackableOrders = data.orders.filter(order => order.order_status !== 'cancelled');
+        const trackableOrders = data.orders.filter(order =>
+            order.order_status !== 'cancelled' && order.order_status !== 'completed'
+        );
         if (trackableOrders.length === 0) {
             box.innerHTML = `<p style="color:var(--muted); font-size:.9rem;">You have no orders to track.</p>`;
             return;
@@ -84,6 +86,12 @@ async function loadOrder(orderId) {
         if (data.order.order_status === 'cancelled') {
             errorBox.style.display = 'block';
             errorBox.textContent = 'This order was cancelled and is no longer being tracked. You can still view it in order history.';
+            return;
+        }
+
+        if (data.order.order_status === 'completed') {
+            errorBox.style.display = 'block';
+            errorBox.textContent = 'This order has been delivered and is no longer being tracked. You can still view it in order history.';
             return;
         }
 

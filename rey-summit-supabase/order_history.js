@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 ${order.order_status === 'pending' && order.payment_method === 'gcash' && order.payment_verification_status === 'rejected'
                     ? `<a class="history-track" href="order_confirmation.html?order_id=${encodeURIComponent(order.order_id)}">Update payment proof</a>`
-                    : order.order_status === 'cancelled'
-                    ? '<span class="history-track">Tracking closed</span>'
+                    : (order.order_status === 'cancelled' || order.order_status === 'completed')
+                    ? `<a class="history-track" href="order_confirmation.html?order_id=${encodeURIComponent(order.order_id)}">View</a>`
                     : `<a class="history-track" href="track_order.html?order_id=${encodeURIComponent(order.order_id)}">View tracking</a>`}
             </article>
         `).join('');
