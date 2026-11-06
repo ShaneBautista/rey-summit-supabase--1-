@@ -48,6 +48,10 @@
         return respond(data);
     }
 
+    function gcashSetupFailure() {
+        return fail('Could not access GCash settings. Run setup_gcash.sql in the Supabase SQL Editor, then try again.', 500);
+    }
+
     async function hasSession() {
         const { data } = await sb.auth.getSession();
         return !!data.session;
@@ -55,6 +59,24 @@
 
     // ---------- payment proof storage ----------
     const PROOF_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+    const GCASH_QR_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
+    function gcashSettingsWithUrl(data) {
+        if (data.success && data.qr_path) {
+            data.qr_url = sb.storage.from('gcash-assets').getPublicUrl(data.qr_path).data.publicUrl;
+        }
+        return data;
+    }
+
+    async function removeGcashQr(path) {
+        if (!path) return;
+        try {
+            const { error } = await sb.storage.from('gcash-assets').remove([path]);
+            if (error) console.error('Could not remove a GCash QR image.', error);
+        } catch (error) {
+            console.error('Could not remove a GCash QR image.', error);
+        }
+    }
 
     async function uploadProof(file) {
         if (!file || !file.size) throw new Error('Please upload a valid proof of payment.');
@@ -139,6 +161,13 @@
         // ----- public / customer -----
         'get_products.php': () => rpc('rsm_get_products'),
 
+        'gcash_settings.php': async () => {
+            const response = await rpc('rsm_get_gcash_settings');
+            const settings = await response.json();
+            if (!response.ok) return response.status === 500 ? gcashSetupFailure() : response;
+            return respond(gcashSettingsWithUrl(settings), response.status);
+        },
+
         'cart.php': async (o) => {
             if (!(await hasSession())) return fail('Please log in to save your cart.', 401);
             if ((o.method || 'GET').toUpperCase() === 'GET') return rpc('rsm_get_cart');
@@ -170,6 +199,12 @@
             let proofPath = null;
             try {
                 if (method === 'gcash') {
+                    const settingsResponse = await rpc('rsm_get_gcash_settings');
+                    const settings = await settingsResponse.json();
+                    if (!settingsResponse.ok) return settingsResponse;
+                    if (!settings.success || (!settings.mobile_number && !settings.qr_path)) {
+                        return fail('GCash payment is not available right now. Please choose another payment method.');
+                    }
                     if (!/^[A-Za-z0-9-]{6,80}$/.test(String(f.gcash_reference || '').trim())) {
                         return fail('Enter a valid GCash reference number.');
                     }
@@ -255,6 +290,16 @@
             if (!res.ok) return res;
             return respond(addForecast(await res.json()));
         },
+        'admin_overview_analytics.php': (o, q) => rpc('rsm_admin_overview_analytics', {
+            p_branch: adminBranch(),
+            p_period: q.get('period'),
+            p_date: q.get('date'),
+        }),
+        'admin_performance_analytics.php': (o, q) => rpc('rsm_admin_performance_analytics', {
+            p_branch: adminBranch(),
+            p_period: q.get('period'),
+            p_date: q.get('date'),
+        }),
         'admin_branch_comparison.php': () => rpc('rsm_admin_branch_comparison', { p_branch: adminBranch() }),
         'admin_delivery_data.php': () => rpc('rsm_admin_delivery_data', { p_branch: adminBranch() }),
         'admin_update_order.php': async (o) => {
@@ -268,6 +313,11 @@
             if ((o.method || 'GET').toUpperCase() === 'GET') return rpc('rsm_admin_sales_list', { p_branch: adminBranch() });
             return rpc('rsm_admin_create_counter_sale', { p_payload: readBody(o.body), p_selected_branch: adminBranch() });
         },
+        'admin_sales_filtered.php': (o, q) => rpc('rsm_admin_sales_list_filtered', {
+            p_branch: adminBranch(),
+            p_period: q.get('period'),
+            p_date: q.get('date'),
+        }),
 
         'admin_products.php': async (o) => {
             if ((o.method || 'GET').toUpperCase() === 'GET') return rpc('rsm_admin_products_list', { p_branch: adminBranch() });
@@ -286,6 +336,56 @@
             });
             if (error || !data) return fail('Could not update staff accounts.', 500);
             return respond(data);
+        },
+
+        'admin_gcash_settings.php': async (o) => {
+            if ((o.method || 'GET').toUpperCase() === 'GET') {
+                const response = await rpc('rsm_get_gcash_settings');
+                return respond(gcashSettingsWithUrl(await response.json()), response.status);
+            }
+
+            const f = readBody(o.body);
+            const adminResponse = await rpc('rsm_admin_me');
+            if (!adminResponse.ok) return adminResponse;
+            const file = f.gcash_qr;
+            let uploadedPath = null;
+            const previousResponse = await rpc('rsm_get_gcash_settings');
+            const previousData = await previousResponse.json();
+            if (!previousResponse.ok) return previousResponse.status === 500 ? gcashSetupFailure() : previousResponse;
+            if (!previousData.success) return respond(previousData, previousResponse.status);
+            const previousPath = previousData.qr_path;
+
+            if (file && file.size) {
+                const extension = GCASH_QR_TYPES[file.type];
+                if (!extension) return fail('The GCash QR image must be a JPG, PNG, or WebP file.');
+                if (file.size > 5 * 1024 * 1024) return fail('The GCash QR image must be smaller than 5 MB.');
+
+                const randomBytes = crypto.getRandomValues(new Uint8Array(16));
+                const randomName = Array.from(randomBytes, byte => byte.toString(16).padStart(2, '0')).join('');
+                uploadedPath = `gcash/${randomName}.${extension}`;
+                const { error } = await sb.storage.from('gcash-assets').upload(uploadedPath, file, {
+                    contentType: file.type,
+                    upsert: false,
+                });
+                if (error) {
+                    console.error('Could not upload the GCash QR image.', error);
+                    return fail('Could not upload the GCash QR image. Please try again.', 500);
+                }
+            }
+
+            const response = await rpc('rsm_admin_save_gcash_settings', {
+                p_mobile_number: f.mobile_number || '',
+                p_qr_path: uploadedPath,
+                p_remove_qr: f.remove_qr === 'true',
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                if (uploadedPath) await removeGcashQr(uploadedPath);
+                if (response.status === 500) return gcashSetupFailure();
+                return respond(result, response.status);
+            }
+            if (previousPath && previousPath !== result.qr_path) await removeGcashQr(previousPath);
+            return respond(gcashSettingsWithUrl(result), response.status);
         },
     };
 

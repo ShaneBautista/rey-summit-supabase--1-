@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCash | Rey Summit</title>
+    <link rel="stylesheet" href="admin_sections.css?v=20">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-api.js"></script>
+</head>
+<body data-page="gcash">
+    <div class="shell">
+        <aside>
+            <div class="brand">
+                <small>Rey Summit</small>
+                <h1>Operations Hub</h1>
+            </div>
+            <nav>
+                <a href="admin_dashboard.html">Overview</a>
+                <a href="admin_sales.html">Sales</a>
+                <a href="admin_inventory.html">Inventory</a>
+                <a href="admin_forecasting.html">Forecasting</a>
+                <a href="admin_performance.html">Branch performance</a>
+                <a class="active" href="admin_gcash.html">GCash</a>
+                <a href="staff_accounts.html">Staff accounts</a>
+            </nav>
+            <div class="aside-footer">
+                <span id="adminGreeting">Signed in</span>
+                <a class="logout" href="admin_logout.php">Log out</a>
+            </div>
+        </aside>
+
+        <main>
+            <header class="topbar">
+                <div>
+                    <div class="kicker">Payment settings</div>
+                    <h2>GCash details.</h2>
+                    <p class="intro">Manage the QR code and mobile number customers use when paying with GCash.</p>
+                </div>
+            </header>
+
+            <section class="panel" aria-labelledby="gcashSettingsTitle">
+                <h3 id="gcashSettingsTitle">Customer payment details</h3>
+                <p class="panel-note">Add a QR code, a mobile number, or both. These details appear at checkout when a customer selects GCash.</p>
+                <form id="gcashSettingsForm" class="product-form gcash-settings-form">
+                    <label for="gcashMobileNumber">GCash mobile number</label>
+                    <input type="tel" id="gcashMobileNumber" name="mobile_number" inputmode="tel" pattern="[0-9+() -]{7,20}" maxlength="20" placeholder="e.g. 09XXXXXXXXX">
+
+                    <label for="gcashQrUpload">GCash QR code</label>
+                    <input type="file" id="gcashQrUpload" name="gcash_qr" accept="image/jpeg,image/png,image/webp" aria-describedby="gcashQrHelp">
+                    <small id="gcashQrHelp" class="form-wide">JPG, PNG, or WebP, up to 5 MB. Leave empty to keep the current QR code.</small>
+
+                    <div id="gcashQrPreview" class="gcash-admin-preview form-wide" hidden>
+                        <img id="gcashQrImage" alt="Current GCash QR code">
+                        <label class="gcash-remove-option">
+                            <input type="checkbox" id="removeGcashQr" name="remove_qr">
+                            Remove the current QR code
+                        </label>
+                    </div>
+
+                    <p id="gcashSettingsMessage" class="form-message form-wide" aria-live="polite"></p>
+                    <div class="form-actions form-wide">
+                        <button class="primary-button" type="submit">Save GCash details</button>
+                    </div>
+                </form>
+            </section>
+            <p id="pageMessage" class="empty" aria-live="polite"></p>
+        </main>
+    </div>
+    <script src="admin_sections.js?v=20"></script>
+</body>
+</html>

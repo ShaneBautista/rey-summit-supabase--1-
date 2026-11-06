@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shop — Rey Summit</title>
-<link rel="stylesheet" href="shop.css?v=10">
+<link rel="stylesheet" href="shop.css?v=12">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-api.js"></script>
@@ -119,6 +119,17 @@
                 </select>
 
                 <div id="gcashPaymentFields" hidden>
+                    <section id="gcashPaymentInfo" class="gcash-payment-info" aria-label="GCash payment details" hidden>
+                        <p id="gcashDetailsMessage" class="form-message" aria-live="polite">Loading GCash details...</p>
+                        <div id="gcashQrContainer" class="gcash-qr-container" hidden>
+                            <img id="gcashPaymentQr" alt="GCash payment QR code">
+                            <p>Scan this QR code using your GCash app.</p>
+                        </div>
+                        <div id="gcashNumberContainer" class="gcash-number-container" hidden>
+                            <span><strong>GCash number</strong> <b id="gcashPaymentNumber"></b></span>
+                            <button type="button" class="gcash-copy-button" id="copyGcashNumber">Copy number</button>
+                        </div>
+                    </section>
                     <p class="form-message">Upload your GCash receipt. Sales staff will verify the payment before confirming your order.</p>
                     <label for="gcashReference">GCash reference number</label>
                     <input type="text" id="gcashReference" name="gcash_reference" maxlength="80" autocomplete="off">
@@ -161,6 +172,6 @@
         </a>
     </nav>
 
-    <script src="ordering.js?v=17"></script>
+    <script src="ordering.js?v=18"></script>
 </body>
 </html>

@@ -273,7 +273,7 @@ th:last-child {
 }
 
 .stock-count {
-    color: var(--coral);
+    color: #000000;
     font-weight: 700;
 }
 
@@ -1181,6 +1181,10 @@ th:last-child {
     margin-bottom: 18px;
 }
 
+.overview-filter-panel {
+    flex-wrap: wrap;
+}
+
 .branch-filter-panel label {
     color: var(--muted);
     font-size: 13px;
@@ -1203,8 +1207,112 @@ th:last-child {
     font-size: 12px;
 }
 
+.overview-date-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.admin-date-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.admin-date-filter label {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.overview-date-filter select,
+.overview-date-filter input,
+.admin-date-filter select,
+.admin-date-filter input,
+.overview-date-apply {
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ink);
+    font: 600 14px 'DM Sans', sans-serif;
+}
+
+.overview-date-filter select {
+    min-width: 100px;
+}
+
+.overview-date-filter input[type="date"],
+.overview-date-filter input[type="month"],
+.admin-date-filter input[type="date"],
+.admin-date-filter input[type="month"] {
+    min-width: 160px;
+}
+
+.overview-date-filter input[type="number"] {
+    width: 110px;
+}
+
+.admin-date-filter select {
+    min-width: 100px;
+}
+
+.admin-date-filter input[type="number"] {
+    width: 110px;
+}
+
+.overview-date-apply {
+    border-color: var(--teal-dark);
+    background: var(--teal-dark);
+    color: #fff;
+    cursor: pointer;
+}
+
+.overview-date-apply:disabled {
+    cursor: wait;
+    opacity: .65;
+}
+
+#overviewFilterStatus {
+    min-width: 0;
+}
+
+.admin-date-filter [data-status] {
+    flex-basis: 100%;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.sales-panel .panel-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.sales-panel .admin-date-filter {
+    justify-content: flex-end;
+}
+
+.performance-filter-panel {
+    margin-bottom: 18px;
+}
+
 .sales-panel {
     padding: 22px 20px;
+}
+
+@media (max-width: 900px) {
+    .overview-date-filter {
+        width: 100%;
+        margin-left: 0;
+        flex-wrap: wrap;
+    }
+
+    .overview-date-filter #overviewFilterStatus {
+        flex-basis: 100%;
+    }
 }
 
 .sales-panel>.panel-head {
@@ -1586,6 +1694,60 @@ th:last-child {
     margin: 0;
     color: var(--coral);
     font-size: 13px;
+}
+
+.gcash-settings-form {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    max-width: 620px;
+}
+
+.gcash-settings-form .form-wide {
+    grid-column: 1;
+}
+
+.gcash-settings-form small {
+    color: var(--muted);
+}
+
+.gcash-admin-preview {
+    display: grid;
+    justify-items: start;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #f7fbfa;
+}
+
+.gcash-admin-preview[hidden] {
+    display: none;
+}
+
+.gcash-admin-preview img {
+    width: min(100%, 260px);
+    max-height: 280px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.gcash-settings-form .gcash-remove-option {
+    display: flex;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 8px;
+}
+
+.gcash-settings-form .gcash-remove-option input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+}
+
+.gcash-settings-form .primary-button:disabled {
+    opacity: .65;
+    cursor: wait;
 }
 
 .table-scroll {
@@ -2206,5 +2368,140 @@ th:last-child {
 
     .staff-order-head {
         flex-direction: column;
+    }
+}
+
+.admin-topbar-actions {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.admin-stock-notifications {
+    position: relative;
+}
+
+.admin-notification-button {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--white);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: var(--shadow);
+}
+
+.admin-notification-button:hover,
+.admin-notification-button:focus-visible {
+    color: var(--teal-dark);
+    border-color: var(--teal);
+}
+
+.admin-notification-button:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+}
+
+.admin-notification-button svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.admin-notification-count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 5px;
+    border: 2px solid var(--white);
+    border-radius: 10px;
+    background: var(--coral);
+    color: var(--white);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 15px;
+    text-align: center;
+}
+
+.admin-notification-panel {
+    position: absolute;
+    z-index: 5;
+    top: calc(100% + 10px);
+    right: 0;
+    width: min(340px, calc(100vw - 32px));
+    max-height: 390px;
+    padding: 16px;
+    overflow-y: auto;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--white);
+    box-shadow: var(--shadow);
+}
+
+.admin-notification-panel h3 {
+    margin: 0 0 10px;
+    font-size: 16px;
+}
+
+.admin-notification-panel ul {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.admin-notification-panel li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+}
+
+.admin-notification-panel li strong {
+    flex: 0 0 auto;
+    color: var(--coral);
+}
+
+.admin-notification-empty {
+    margin: 8px 0 14px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.admin-notification-panel > a {
+    display: inline-block;
+    margin-top: 12px;
+    color: var(--teal-dark);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.admin-notification-panel > a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width:700px) {
+    .admin-topbar-actions {
+        margin-top: 16px;
+    }
+
+    .admin-topbar-actions .date-chip {
+        margin-top: 0;
     }
 }

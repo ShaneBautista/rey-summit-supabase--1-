@@ -42,13 +42,13 @@ async function loadMyOrders() {
             return;
         }
 
-        const activeOrders = data.orders.filter(order => !['completed', 'cancelled'].includes(order.order_status));
-        if (activeOrders.length === 0) {
-            box.innerHTML = `<p style="color:var(--muted); font-size:.9rem;">You have no active orders to track.</p>`;
+        const trackableOrders = data.orders.filter(order => order.order_status !== 'cancelled');
+        if (trackableOrders.length === 0) {
+            box.innerHTML = `<p style="color:var(--muted); font-size:.9rem;">You have no orders to track.</p>`;
             return;
         }
 
-        box.innerHTML = `<div class="orders-list">` + activeOrders.map(o => `
+        box.innerHTML = `<div class="orders-list">` + trackableOrders.map(o => `
             <a href="track_order.html?order_id=${o.order_id}">
                 <span>Order #${String(o.order_id).padStart(6, '0')} · ${money(o.total_amount)}</span>
                 <span class="badge ${o.order_status}">${statusLabel(o.order_status)}</span>
@@ -81,9 +81,9 @@ async function loadOrder(orderId) {
             return;
         }
 
-        if (['completed', 'cancelled'].includes(data.order.order_status)) {
+        if (data.order.order_status === 'cancelled') {
             errorBox.style.display = 'block';
-            errorBox.textContent = 'This order is no longer being tracked. You can still view it in order history.';
+            errorBox.textContent = 'This order was cancelled and is no longer being tracked. You can still view it in order history.';
             return;
         }
 

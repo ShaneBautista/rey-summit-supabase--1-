@@ -93,6 +93,7 @@ function normalizeAdminNavigation() {
         'admin_inventory.html',
         'admin_forecasting.html',
         'admin_performance.html',
+        'admin_gcash.html',
         'staff_accounts.html',
     ];
     const linksByPage = new Map();
@@ -109,16 +110,24 @@ function normalizeAdminNavigation() {
         }
     });
 
+    if (!linksByPage.has('admin_gcash.html')) {
+        const link = document.createElement('a');
+        link.href = 'admin_gcash.html';
+        link.textContent = 'GCash';
+        linksByPage.set('admin_gcash.html', link);
+    }
+
     expectedOrder.forEach(page => {
         const link = linksByPage.get(page);
-        if (link) nav.appendChild(link);
+        if (link) {
+            link.classList.toggle('active', location.pathname.endsWith(page));
+            nav.appendChild(link);
+        }
     });
 }
 
 normalizeAdminNavigation();
 wireAdminLogoutConfirmation();
-
-let branchComparisonRequestInProgress = false;
 
 (async function loadAdminPage() {
     const page = location.pathname.endsWith('admin_dashboard.html') ? 'overview' : document.body.dataset.page;
@@ -134,6 +143,11 @@ let branchComparisonRequestInProgress = false;
         year: 'numeric'
     });
     if (page === 'staff_accounts') {
+        try {
+            await loadAdminStockNotifications();
+        } catch (error) {
+            document.getElementById('pageMessage').textContent = error.message || 'Stock notifications are unavailable.';
+        }
         await setupStaffAccounts();
         return;
     }
@@ -145,6 +159,7 @@ let branchComparisonRequestInProgress = false;
             return;
         }
         if (!data.success) throw new Error(data.message);
+        renderAdminStockNotifications(data.products);
         const adminName = document.getElementById('adminName');
         if (adminName) adminName.textContent = data.admin.name || 'Admin';
         document.getElementById('adminGreeting').textContent = `Signed in as ${data.admin.name || 'administrator'} · ${data.branch === 'all' ? 'All branches' : data.branch}`;
@@ -155,10 +170,77 @@ let branchComparisonRequestInProgress = false;
         if (page === 'sales') await loadSales();
         if (page === 'delivery') await setupDeliveryQueue();
         if (page === 'performance') renderPerformance(data);
+        if (page === 'gcash') await setupAdminGcash();
     } catch (error) {
         document.getElementById('pageMessage').textContent = error.message || 'Dashboard data is unavailable.';
     }
 })();
+
+async function setupAdminGcash() {
+    const form = document.getElementById('gcashSettingsForm');
+    const message = document.getElementById('gcashSettingsMessage');
+    const qrPreview = document.getElementById('gcashQrPreview');
+    const qrImage = document.getElementById('gcashQrImage');
+    const removeQr = document.getElementById('removeGcashQr');
+
+    const renderSettings = settings => {
+        form.elements.mobile_number.value = settings.mobile_number || '';
+        if (settings.qr_url) {
+            qrImage.src = settings.qr_url;
+            qrPreview.hidden = false;
+            removeQr.disabled = false;
+        } else {
+            qrImage.removeAttribute('src');
+            qrPreview.hidden = true;
+            removeQr.checked = false;
+            removeQr.disabled = true;
+        }
+    };
+
+    try {
+        const response = await rsmApi('admin_gcash_settings.php');
+        const settings = await response.json();
+        if (response.status === 401) {
+            window.location.href = 'Admin_login.html';
+            return;
+        }
+        if (!settings.success) throw new Error(settings.message || 'Could not load GCash details.');
+        renderSettings(settings);
+    } catch (error) {
+        message.textContent = error.message || 'Could not load GCash details.';
+        message.className = 'form-message error';
+    }
+
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const submitButton = form.querySelector('[type="submit"]');
+        const payload = new FormData(form);
+        const qrFile = form.elements.gcash_qr.files[0];
+        payload.set('remove_qr', removeQr.checked && !(qrFile && qrFile.size) ? 'true' : 'false');
+        submitButton.disabled = true;
+        message.textContent = 'Saving GCash details...';
+        message.className = 'form-message';
+        try {
+            const response = await rsmApi('admin_gcash_settings.php', { method: 'POST', body: payload });
+            const result = await response.json();
+            if (response.status === 401) {
+                window.location.href = 'Admin_login.html';
+                return;
+            }
+            if (!result.success) throw new Error(result.message || 'Could not save GCash details.');
+            renderSettings(result);
+            form.elements.gcash_qr.value = '';
+            removeQr.checked = false;
+            message.textContent = result.message || 'GCash details saved.';
+            message.className = 'form-message success';
+        } catch (error) {
+            message.textContent = error.message || 'Could not save GCash details.';
+            message.className = 'form-message error';
+        } finally {
+            submitButton.disabled = false;
+        }
+    });
+}
 
 function setupAdminBranchFilter(selectedBranch) {
     const filter = document.getElementById('adminBranchFilter');
@@ -190,6 +272,78 @@ function setupAdminBranchFilter(selectedBranch) {
             filter.disabled = false;
         }
     });
+}
+
+function renderAdminStockNotifications(products) {
+    const topbar = document.querySelector('.topbar');
+    if (!topbar) return;
+
+    let actions = topbar.querySelector('.admin-topbar-actions');
+    if (!actions) {
+        actions = document.createElement('div');
+        actions.className = 'admin-topbar-actions';
+        const dateChip = topbar.querySelector('.date-chip');
+        if (dateChip) actions.appendChild(dateChip);
+        topbar.appendChild(actions);
+    }
+
+    const lowStock = (Array.isArray(products) ? products : [])
+        .filter(product => (product.is_active === undefined || Number(product.is_active) === 1) && Number(product.stock_qty) <= 10)
+        .sort((first, second) => Number(first.stock_qty) - Number(second.stock_qty));
+    let notifications = actions.querySelector('.admin-stock-notifications');
+    if (!notifications) {
+        notifications = document.createElement('div');
+        notifications.className = 'admin-stock-notifications';
+        notifications.innerHTML = `
+            <button class="admin-notification-button" type="button" aria-label="Low stock notifications" aria-expanded="false" aria-controls="adminStockNotificationPanel">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"></path></svg>
+                <span class="admin-notification-count" hidden></span>
+            </button>
+            <section class="admin-notification-panel" id="adminStockNotificationPanel" aria-label="Low stock items" hidden></section>`;
+        actions.appendChild(notifications);
+
+        const button = notifications.querySelector('.admin-notification-button');
+        const panel = notifications.querySelector('.admin-notification-panel');
+        const closePanel = () => {
+            panel.hidden = true;
+            button.setAttribute('aria-expanded', 'false');
+        };
+        button.addEventListener('click', () => {
+            const isOpen = button.getAttribute('aria-expanded') === 'true';
+            panel.hidden = isOpen;
+            button.setAttribute('aria-expanded', String(!isOpen));
+        });
+        document.addEventListener('click', event => {
+            if (!notifications.contains(event.target)) closePanel();
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') closePanel();
+        });
+    }
+
+    const button = notifications.querySelector('.admin-notification-button');
+    const badge = notifications.querySelector('.admin-notification-count');
+    const panel = notifications.querySelector('.admin-notification-panel');
+    button.setAttribute('aria-label', `Low stock notifications: ${lowStock.length}`);
+    badge.textContent = lowStock.length > 99 ? '99+' : String(lowStock.length);
+    badge.hidden = lowStock.length === 0;
+    panel.innerHTML = `
+        <h3>Low stock${lowStock.length ? ` · ${lowStock.length}` : ''}</h3>
+        ${lowStock.length
+            ? `<ul>${lowStock.map(product => `<li><span>${escapeAdmin(product.product_name)}</span><strong>${Number(product.stock_qty)} left</strong></li>`).join('')}</ul>`
+            : '<p class="admin-notification-empty">No low-stock items right now.</p>'}
+        <a href="admin_inventory.html">View inventory</a>`;
+}
+
+async function loadAdminStockNotifications() {
+    const response = await rsmApi('admin_dashboard_data.php');
+    const data = await response.json();
+    if (response.status === 401) {
+        window.location.href = 'Admin_login.html';
+        return;
+    }
+    if (!data.success) throw new Error(data.message || 'Could not load stock notifications.');
+    renderAdminStockNotifications(data.products);
 }
 
 async function setupStaffAccounts() {
@@ -343,6 +497,7 @@ async function loadInventory() {
         formMessage.textContent = '';
     }
     inventoryProducts = data.products;
+    renderAdminStockNotifications(inventoryProducts);
     if (!inventoryEventsBound) {
         document.getElementById('inventoryFilter').addEventListener('change', event => drawInventory(event.target.value));
         document.getElementById('productForm').addEventListener('submit', saveProduct);
@@ -447,11 +602,113 @@ async function deleteProduct(id) {
 }
 
 function renderOverview(data) {
-    renderRevenueChart(data.daily_revenue || []);
-    renderOrderStatusChart(data.monthly_statuses || []);
-    renderTopProducts(data.top_products || []);
     renderDecisionSupport(data);
     loadOverviewBranchInsight(data.branch);
+    setupOverviewDateFilter();
+}
+
+let overviewAnalyticsRequest = 0;
+
+function setupOverviewDateFilter() {
+    const selection = setupAdminDateFilter('overviewDateFilter', loadOverviewAnalytics);
+    if (selection) loadOverviewAnalytics(selection.period, selection.date);
+}
+
+function setupAdminDateFilter(formId, onApply) {
+    const form = document.getElementById(formId);
+    if (!form) return null;
+
+    const period = form.querySelector('[data-period]');
+    const day = form.querySelector('[data-day]');
+    const month = form.querySelector('[data-month]');
+    const year = form.querySelector('[data-year]');
+    const params = new URLSearchParams(location.search);
+    const today = new Date();
+    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const savedDate = params.get('date') || todayString;
+    const validDate = /^\d{4}-\d{2}-\d{2}$/.test(savedDate) && !Number.isNaN(new Date(`${savedDate}T00:00:00`).getTime()) ?
+        savedDate : todayString;
+    period.value = ['day', 'month', 'year'].includes(params.get('period')) ? params.get('period') : 'day';
+    day.value = validDate;
+    month.value = validDate.slice(0, 7);
+    year.value = validDate.slice(0, 4);
+
+    const updateInput = () => {
+        day.hidden = period.value !== 'day';
+        day.disabled = period.value !== 'day';
+        month.hidden = period.value !== 'month';
+        month.disabled = period.value !== 'month';
+        year.hidden = period.value !== 'year';
+        year.disabled = period.value !== 'year';
+    };
+    const selectedDate = () => period.value === 'day' ? day.value :
+        period.value === 'month' ? `${month.value}-01` :
+        `${year.value}-01-01`;
+    const syncDateNavigation = () => {
+        document.querySelectorAll('.shell > aside > nav a[href]').forEach(link => {
+            const target = new URL(link.href, location.href);
+            if (!['admin_dashboard.html', 'admin_sales.html', 'admin_performance.html'].includes(target.pathname.split('/').pop())) return;
+            target.searchParams.set('period', period.value);
+            target.searchParams.set('date', selectedDate());
+            link.href = target.href;
+        });
+    };
+
+    updateInput();
+    syncDateNavigation();
+    if (form.dataset.dateFilterBound !== 'true') {
+        period.addEventListener('change', updateInput);
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            const activeInput = period.value === 'day' ? day : period.value === 'month' ? month : year;
+            if (!activeInput.value || !activeInput.checkValidity()) {
+                activeInput.reportValidity();
+                return;
+            }
+            const date = selectedDate();
+            const query = new URLSearchParams(location.search);
+            query.set('period', period.value);
+            query.set('date', date);
+            history.replaceState(null, '', `${location.pathname}?${query}`);
+            syncDateNavigation();
+            onApply(period.value, date);
+        });
+        form.dataset.dateFilterBound = 'true';
+    }
+
+    return { period: period.value, date: selectedDate() };
+}
+
+async function loadOverviewAnalytics(period, date) {
+    const status = document.getElementById('overviewFilterStatus');
+    const form = document.getElementById('overviewDateFilter');
+    const apply = form.querySelector('.overview-date-apply');
+    const request = ++overviewAnalyticsRequest;
+    apply.disabled = true;
+    status.textContent = 'Loading analytics...';
+    try {
+        const query = new URLSearchParams({ period, date });
+        const response = await rsmApi(`admin_overview_analytics.php?${query}`);
+        const data = await response.json();
+        if (response.status === 401) {
+            window.location.href = 'Admin_login.html';
+            return;
+        }
+        if (!data.success) throw new Error(data.message || 'Could not load overview analytics.');
+        if (request !== overviewAnalyticsRequest) return;
+        renderRevenueChart(data.daily_revenue || [], period, date);
+        renderOrderStatusChart(data.monthly_statuses || [], period);
+        renderTopProducts(data.top_products || [], period);
+        const periodLabel = period === 'day' ? 'selected day' : period === 'month' ? 'selected month' : 'selected year';
+        document.getElementById('revenuePeriodNote').textContent = `${period === 'year' ? 'Monthly' : 'Daily'} sales · ${periodLabel}`;
+        document.getElementById('orderStatusPeriodNote').textContent = periodLabel;
+        document.getElementById('topProductsPeriodNote').textContent = `Units sold · ${periodLabel}`;
+        status.textContent = '';
+    } catch (error) {
+        if (request === overviewAnalyticsRequest) status.textContent = error.message || 'Overview analytics are unavailable.';
+    } finally {
+        if (request === overviewAnalyticsRequest) apply.disabled = false;
+    }
 }
 
 function renderDecisionSupport(data) {
@@ -537,27 +794,27 @@ async function loadOverviewBranchInsight(selectedBranch) {
     }
 }
 
-function renderRevenueChart(rows) {
+function renderRevenueChart(rows, period, selectedDate) {
     const target = document.getElementById('revenueChart');
     const valuesByDate = new Map(rows.map(row => [String(row.sale_date), Number(row.revenue || 0)]));
-    const days = Array.from({
-        length: 7
-    }, (_, index) => {
-        const date = new Date();
-        date.setHours(0, 0, 0, 0);
-        date.setDate(date.getDate() - (6 - index));
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const count = period === 'day' ? 1 : period === 'month' ? new Date(year, month, 0).getDate() : 12;
+    const buckets = Array.from({ length: count }, (_, index) => {
+        const date = period === 'year' ? new Date(year, index, 1) :
+            period === 'month' ? new Date(year, month - 1, index + 1) :
+            new Date(year, month - 1, day);
+        const key = period === 'year' ?
+            `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01` :
+            `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         return {
             key,
-            label: date.toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric'
-            }),
+            label: date.toLocaleDateString(undefined, period === 'year' ?
+                { month: 'short' } : { month: 'short', day: 'numeric' }),
             value: valuesByDate.get(key) || 0
         };
     });
 
-    const maxValue = Math.max(...days.map(day => day.value));
+    const maxValue = Math.max(...buckets.map(bucket => bucket.value));
     const rawStep = maxValue > 0 ? maxValue / 3 : 1;
     const magnitude = 10 ** Math.floor(Math.log10(rawStep));
     const normalizedStep = rawStep / magnitude;
@@ -571,9 +828,9 @@ function renderRevenueChart(rows) {
     const bottom = 42;
     const chartWidth = width - left - right;
     const chartHeight = height - top - bottom;
-    const points = days.map((day, index) => ({
-        x: left + (chartWidth * index / (days.length - 1)),
-        y: top + chartHeight * (1 - day.value / axisMax),
+    const points = buckets.map((bucket, index) => ({
+        x: left + (buckets.length === 1 ? chartWidth / 2 : chartWidth * index / (buckets.length - 1)),
+        y: top + chartHeight * (1 - bucket.value / axisMax),
     }));
     const gridLines = Array.from({
         length: 4
@@ -583,12 +840,15 @@ function renderRevenueChart(rows) {
         return `<g><line class="chart-grid-line" x1="${left}" y1="${y}" x2="${width - right}" y2="${y}"></line><text class="chart-axis-label" x="${left - 10}" y="${y + 5}" text-anchor="end">${Math.round(value).toLocaleString()}</text></g>`;
     }).join('');
     const linePoints = points.map(point => `${point.x},${point.y}`).join(' ');
-    const pointMarks = points.map((point, index) => `<circle class="chart-point" cx="${point.x}" cy="${point.y}" r="5.5"><title>${days[index].label}: ${adminMoney(days[index].value)}</title></circle>`).join('');
-    const dateLabels = points.map((point, index) => `<text class="chart-date-label" x="${point.x}" y="${height - 9}" text-anchor="middle">${escapeAdmin(days[index].label)}</text>`).join('');
+    const pointMarks = points.map((point, index) => `<circle class="chart-point" cx="${point.x}" cy="${point.y}" r="5.5"><title>${buckets[index].label}: ${adminMoney(buckets[index].value)}</title></circle>`).join('');
+    const labelInterval = Math.ceil(buckets.length / 8);
+    const dateLabels = points.map((point, index) => index % labelInterval === 0 || index === points.length - 1 ?
+        `<text class="chart-date-label" x="${point.x}" y="${height - 9}" text-anchor="middle">${escapeAdmin(buckets[index].label)}</text>` : '').join('');
+    const periodLabel = period === 'day' ? 'selected day' : period === 'month' ? 'selected month' : 'selected year';
 
     target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="revenueSvgTitle revenueSvgDescription">
-        <title id="revenueSvgTitle">Revenue trend for the last 7 days</title>
-        <desc id="revenueSvgDescription">${days.map(day => `${day.label}: ${adminMoney(day.value)}`).join('; ')}</desc>
+        <title id="revenueSvgTitle">Revenue for the ${periodLabel}</title>
+        <desc id="revenueSvgDescription">${buckets.map(bucket => `${bucket.label}: ${adminMoney(bucket.value)}`).join('; ')}</desc>
         ${gridLines}
         <polyline class="revenue-line" points="${linePoints}"></polyline>
         ${pointMarks}
@@ -596,7 +856,7 @@ function renderRevenueChart(rows) {
     </svg>`;
 }
 
-function renderOrderStatusChart(rows) {
+function renderOrderStatusChart(rows, period) {
     const target = document.getElementById('orderStatusChart');
     const statusOrder = [
         ['pending', 'Pending', '#078778'],
@@ -620,16 +880,17 @@ function renderOrderStatusChart(rows) {
     });
     const background = total ? `conic-gradient(${segments.join(', ')})` : '#edf1ee';
 
-    target.innerHTML = `<div class="status-donut" role="img" aria-label="${total} orders this month by status" style="--status-donut:${background}">
+    const periodLabel = period === 'day' ? 'selected day' : period === 'month' ? 'selected month' : 'selected year';
+    target.innerHTML = `<div class="status-donut" role="img" aria-label="${total} orders for the ${periodLabel} by status" style="--status-donut:${background}">
             <div><strong>${total.toLocaleString()}</strong><span>orders</span></div>
         </div>
         <ul class="status-legend">${statuses.map(status => `<li><span class="status-key"><i style="--status-color:${status.color}"></i>${status.label}</span><strong>${status.count.toLocaleString()}</strong></li>`).join('')}</ul>`;
 }
 
-function renderTopProducts(products) {
+function renderTopProducts(products, period) {
     const target = document.getElementById('topProductsChart');
     if (!products.length) {
-        target.innerHTML = '<p class="empty">No product sales in the last 30 days.</p>';
+        target.innerHTML = '<p class="empty">No product sales in the selected period.</p>';
         return;
     }
 
@@ -734,13 +995,32 @@ async function loadSales() {
     table.innerHTML = '<p class="empty">Loading sales...</p>';
     try {
         await setupSaleForm();
-        const response = await rsmApi('admin_sales_data.php');
+        const selection = setupAdminDateFilter('salesDateFilter', loadSalesData);
+        if (!selection) throw new Error('The sales date filter is unavailable.');
+        await loadSalesData(selection.period, selection.date);
+    } catch (error) {
+        table.innerHTML = `<p class="empty">${escapeAdmin(error.message || 'Could not load sales.')}</p>`;
+    }
+}
+
+let salesFilterRequest = 0;
+
+async function loadSalesData(period, date) {
+    const table = document.getElementById('salesTable');
+    const status = document.querySelector('#salesDateFilter [data-status]');
+    const request = ++salesFilterRequest;
+    table.innerHTML = '<p class="empty">Loading sales...</p>';
+    status.textContent = 'Loading sales...';
+    try {
+        const query = new URLSearchParams({ period, date });
+        const response = await rsmApi(`admin_sales_filtered.php?${query}`);
         const data = await response.json();
         if (response.status === 401) {
             window.location.href = 'Admin_login.html';
             return;
         }
         if (!data.success) throw new Error(data.message || 'Could not load sales.');
+        if (request !== salesFilterRequest) return;
         const branchField = document.querySelector('#saleForm [name="branch"]');
         if (!branchField) throw new Error('The sales branch field is missing.');
         if (data.branch !== 'all') {
@@ -750,8 +1030,12 @@ async function loadSales() {
             branchField.disabled = false;
         }
         renderSales(data.orders);
+        const periodLabel = period === 'day' ? 'selected day' : period === 'month' ? 'selected month' : 'selected year';
+        status.textContent = `Showing sales for the ${periodLabel}.`;
     } catch (error) {
+        if (request !== salesFilterRequest) return;
         table.innerHTML = `<p class="empty">${escapeAdmin(error.message || 'Could not load sales.')}</p>`;
+        status.textContent = error.message || 'Could not load sales.';
     }
 }
 
@@ -937,48 +1221,74 @@ async function updateDeliveryStatus(orderId, status) {
     }
 }
 
+let performanceDateSelection = null;
+let performanceAnalyticsRequest = 0;
+let performanceRefreshBound = false;
+
 function renderPerformance(data) {
-    const monthly = data.monthly || {};
-    const revenuePercent = Math.min(100, Math.round((Number(monthly.revenue || 0) / 100000) * 100));
-    const fulfillment = Number(data.fulfillment_rate || 0);
-    document.getElementById('revenue').textContent = adminMoney(monthly.revenue);
-    document.getElementById('orders').textContent = monthly.order_count || 0;
-    document.getElementById('deliveries').textContent = data.open_deliveries;
-    document.getElementById('revenueBar').style.width = `${revenuePercent}%`;
-    document.getElementById('revenueGoal').textContent = `${revenuePercent}%`;
-    document.getElementById('fulfillmentBar').style.width = `${fulfillment}%`;
-    document.getElementById('fulfillmentRate').textContent = `${fulfillment}%`;
-    document.getElementById('performanceInsight').innerHTML = `<strong>Decision cue:</strong> fulfillment is at ${fulfillment}%. Keep the delivery desk clear to protect the branch experience.`;
-    loadBranchComparison();
-    window.setInterval(() => {
-        if (!document.hidden) loadBranchComparison();
-    }, 15000);
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) loadBranchComparison();
+    performanceDateSelection = setupAdminDateFilter('performanceDateFilter', (period, date) => {
+        performanceDateSelection = { period, date };
+        loadPerformanceAnalytics(period, date);
     });
-    window.addEventListener('focus', loadBranchComparison);
+    if (!performanceDateSelection) throw new Error('The performance date filter is unavailable.');
+    loadPerformanceAnalytics(performanceDateSelection.period, performanceDateSelection.date);
+
+    if (!performanceRefreshBound) {
+        window.setInterval(() => {
+            if (!document.hidden && performanceDateSelection) {
+                loadPerformanceAnalytics(performanceDateSelection.period, performanceDateSelection.date);
+            }
+        }, 15000);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && performanceDateSelection) {
+                loadPerformanceAnalytics(performanceDateSelection.period, performanceDateSelection.date);
+            }
+        });
+        window.addEventListener('focus', () => {
+            if (performanceDateSelection) loadPerformanceAnalytics(performanceDateSelection.period, performanceDateSelection.date);
+        });
+        performanceRefreshBound = true;
+    }
 }
 
-async function loadBranchComparison() {
-    if (branchComparisonRequestInProgress) return;
-    branchComparisonRequestInProgress = true;
+async function loadPerformanceAnalytics(period, date) {
+    const request = ++performanceAnalyticsRequest;
     const status = document.getElementById('branchComparisonStatus');
+    const filterStatus = document.querySelector('#performanceDateFilter [data-status]');
+    const query = new URLSearchParams({ period, date });
+    status.textContent = 'Loading branch performance...';
+    filterStatus.textContent = '';
     try {
-        const response = await rsmApi('admin_branch_comparison.php', {
-            cache: 'no-store'
-        });
+        const response = await rsmApi(`admin_performance_analytics.php?${query}`, { cache: 'no-store' });
         const data = await response.json();
         if (response.status === 401) {
             window.location.href = 'Admin_login.html';
             return;
         }
-        if (!data.success) throw new Error(data.message || 'Could not load branch comparison.');
+        if (!data.success) throw new Error(data.message || 'Could not load branch performance.');
+        if (request !== performanceAnalyticsRequest) return;
+
+        const monthly = data.monthly || {};
+        const revenuePercent = Math.min(100, Math.round((Number(monthly.revenue || 0) / 100000) * 100));
+        const fulfillment = Number(data.fulfillment_rate || 0);
+        const periodLabel = period === 'day' ? 'selected day' : period === 'month' ? 'selected month' : 'selected year';
+        document.getElementById('performanceRevenueLabel').textContent = `Revenue · ${periodLabel}`;
+        document.getElementById('performanceOrdersLabel').textContent = `Orders · ${periodLabel}`;
+        document.getElementById('revenue').textContent = adminMoney(monthly.revenue);
+        document.getElementById('orders').textContent = Number(monthly.order_count || 0).toLocaleString();
+        document.getElementById('deliveries').textContent = Number(data.open_deliveries || 0).toLocaleString();
+        document.getElementById('revenueBar').style.width = `${revenuePercent}%`;
+        document.getElementById('revenueGoal').textContent = `${revenuePercent}%`;
+        document.getElementById('fulfillmentBar').style.width = `${fulfillment}%`;
+        document.getElementById('fulfillmentRate').textContent = `${fulfillment}%`;
+        document.getElementById('performanceInsight').innerHTML = `<strong>Decision cue:</strong> fulfillment for the ${periodLabel} is at ${fulfillment}%. Keep the delivery desk clear to protect the branch experience.`;
+        document.getElementById('performanceComparisonPeriod').textContent = periodLabel;
         renderBranchComparison(data.branches || []);
         status.textContent = `Updated at ${new Date().toLocaleTimeString()}. Refreshes every 15 seconds.`;
     } catch (error) {
-        status.textContent = error.message || 'Could not refresh branch comparison.';
-    } finally {
-        branchComparisonRequestInProgress = false;
+        if (request !== performanceAnalyticsRequest) return;
+        status.textContent = error.message || 'Could not load branch performance.';
+        filterStatus.textContent = error.message || 'Could not load branch performance.';
     }
 }
 

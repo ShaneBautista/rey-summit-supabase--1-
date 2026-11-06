@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Branch Performance | Rey Summit</title>
-	<link rel="stylesheet" href="admin_sections.css?v=15">
+	<link rel="stylesheet" href="admin_sections.css?v=22">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-api.js"></script>
@@ -28,20 +28,35 @@
 				<div><div class="kicker">Branch performance</div><h2>Make the store stronger.</h2><p class="intro">Track the current branch's revenue, throughput, and fulfillment health.</p></div>
 				<div class="date-chip" id="reportDate"></div>
 			</header>
+			<section class="panel performance-filter-panel">
+				<form id="performanceDateFilter" class="admin-date-filter">
+					<label for="performancePeriod">Filter date</label>
+					<select id="performancePeriod" data-period>
+						<option value="day">Day</option>
+						<option value="month">Month</option>
+						<option value="year">Year</option>
+					</select>
+					<input type="date" data-day aria-label="Select day">
+					<input type="month" data-month aria-label="Select month" hidden disabled>
+					<input type="number" data-year min="1" max="9999" step="1" aria-label="Select year" hidden disabled>
+					<button class="overview-date-apply" type="submit">Apply</button>
+					<span data-status aria-live="polite"></span>
+				</form>
+			</section>
 			<section class="grid">
-				<article class="metric"><div class="metric-label">Revenue this month</div><strong id="revenue">--</strong><span>Against ₱100,000 goal</span></article>
-				<article class="metric"><div class="metric-label">Orders this month</div><strong id="orders">--</strong><span>Non-cancelled orders</span></article>
-				<article class="metric"><div class="metric-label">Open deliveries</div><strong id="deliveries">--</strong><span>Requires operations focus</span></article>
+				<article class="metric"><div class="metric-label" id="performanceRevenueLabel">Revenue</div><strong id="revenue">--</strong><span>Against ₱100,000 goal</span></article>
+				<article class="metric"><div class="metric-label" id="performanceOrdersLabel">Orders</div><strong id="orders">--</strong><span>Non-cancelled orders</span></article>
+				<article class="metric"><div class="metric-label">Open deliveries</div><strong id="deliveries">--</strong><span>Current operations workload</span></article>
 			</section>
 			<section class="panel"><h3>Branch scorecard</h3><div class="bar-row"><span>Revenue goal</span><div class="bar"><i id="revenueBar" style="width:0%"></i></div><strong id="revenueGoal">--</strong></div><div class="bar-row"><span>Fulfillment</span><div class="bar"><i id="fulfillmentBar" style="width:0%"></i></div><strong id="fulfillmentRate">--</strong></div></section>
 			<section class="panel comparison-panel">
-				<div class="panel-head"><div><h3>Branch comparison</h3><p class="panel-note">Live performance across four branches.</p></div><span class="comparison-period">This month</span></div>
+				<div class="panel-head"><div><h3>Branch comparison</h3><p class="panel-note">Performance across four branches for the selected period.</p></div><span id="performanceComparisonPeriod" class="comparison-period">Selected date</span></div>
 				<div id="branchComparison" class="branch-comparison"><p class="empty">Loading branch comparison...</p></div>
 				<p id="branchComparisonStatus" class="empty" aria-live="polite"></p>
 			</section>
 			<section class="panel"><div class="insight" id="performanceInsight">Preparing performance insight...</div><p id="pageMessage" class="empty"></p></section>
 		</main>
 	</div>
-	<script src="admin_sections.js?v=16"></script>
+	<script src="admin_sections.js?v=22"></script>
 </body>
 </html>

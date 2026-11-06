@@ -292,12 +292,20 @@ body.shop-body{
     padding: 24px clamp(20px,5vw,30px) 26px; box-shadow: 0 -10px 30px rgba(0,0,0,.2);
     animation: sheet-up .3s ease-out both;
     max-height: 90vh;
+    max-height: min(90vh, 90dvh);
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 @keyframes sheet-up{ from{ transform: translateY(30px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
 .modal-card h2{ margin-bottom:14px; flex-shrink: 0; }
+.modal-card #checkoutForm{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+}
 .modal-card label{ display:block; font-size:.85rem; color:var(--muted); margin:12px 0 6px; }
 .modal-card input, .modal-card textarea, .modal-card select{
     width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:12px;
@@ -357,6 +365,22 @@ body.shop-body{
 .form-message{ margin-top:10px; font-size:.85rem; min-height:18px; }
 .form-message.error{ color: var(--danger); }
 .form-message.success{ color: var(--success); }
+.gcash-payment-info{
+    margin:12px 0;
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:#f6fbf9;
+}
+.gcash-payment-info[hidden],.gcash-qr-container[hidden],.gcash-number-container[hidden]{ display:none; }
+.gcash-payment-info .form-message{ margin:0 0 10px; }
+.gcash-qr-container{ display:grid; justify-items:center; gap:8px; }
+.gcash-qr-container img{ width:min(100%,240px); max-height:280px; object-fit:contain; border-radius:8px; background:#fff; }
+.gcash-qr-container p{ margin:0; color:var(--muted); font-size:.82rem; text-align:center; }
+.gcash-number-container{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-top:12px; }
+.gcash-number-container span{ display:grid; gap:4px; overflow-wrap:anywhere; }
+.gcash-number-container strong{ color:var(--muted); font-size:.78rem; }
+.gcash-copy-button{ padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); font:700 .8rem 'DM Sans',sans-serif; cursor:pointer; }
 .receipt-card input[type="text"],.receipt-card input[type="file"]{ display:block; width:100%; margin-top:6px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; font:500 14px 'DM Sans',sans-serif; }
 .receipt-card form label{ display:block; margin-top:12px; color:var(--muted); font-size:12px; font-weight:700; }
 .receipt-card form{ text-align:right; }

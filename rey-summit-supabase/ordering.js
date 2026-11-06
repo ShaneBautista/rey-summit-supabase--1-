@@ -12,6 +12,7 @@ let CART = {}; // product_id -> { product, quantity }
 let cartSaveQueue = Promise.resolve();
 let cartSyncError = '';
 let accountDetailsReady = false;
+let gcashDetailsLoaded = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
@@ -423,7 +424,57 @@ function wireModals() {
         document.getElementById('gcashPaymentFields').hidden = !isGcash;
         document.getElementById('gcashReference').required = isGcash;
         document.getElementById('gcashProof').required = isGcash;
+        if (isGcash) loadGcashPaymentDetails();
     });
+
+    document.getElementById('copyGcashNumber').addEventListener('click', async () => {
+        const number = document.getElementById('gcashPaymentNumber').textContent;
+        const message = document.getElementById('gcashDetailsMessage');
+        try {
+            await navigator.clipboard.writeText(number);
+            message.textContent = 'GCash number copied.';
+            message.className = 'form-message success';
+        } catch (error) {
+            message.textContent = 'Copy is unavailable here. Select the number to copy it manually.';
+            message.className = 'form-message error';
+        }
+    });
+}
+
+async function loadGcashPaymentDetails() {
+    const info = document.getElementById('gcashPaymentInfo');
+    const message = document.getElementById('gcashDetailsMessage');
+    const qrContainer = document.getElementById('gcashQrContainer');
+    const numberContainer = document.getElementById('gcashNumberContainer');
+    info.hidden = false;
+    if (gcashDetailsLoaded) return;
+    message.textContent = 'Loading GCash details...';
+    message.className = 'form-message';
+    try {
+        const response = await rsmApi('gcash_settings.php');
+        const settings = await response.json();
+        if (!response.ok || !settings.success) {
+            throw new Error(settings.message || 'Could not load GCash details.');
+        }
+        gcashDetailsLoaded = true;
+        if (settings.qr_url) {
+            document.getElementById('gcashPaymentQr').src = settings.qr_url;
+            qrContainer.hidden = false;
+        }
+        if (settings.mobile_number) {
+            document.getElementById('gcashPaymentNumber').textContent = settings.mobile_number;
+            numberContainer.hidden = false;
+        }
+        if (!settings.qr_url && !settings.mobile_number) {
+            message.textContent = 'GCash payment details are not available right now. Please choose another payment method.';
+            message.className = 'form-message error';
+            return;
+        }
+        message.textContent = 'Pay using the QR code or mobile number below, then upload your receipt.';
+    } catch (error) {
+        message.textContent = error.message || 'Could not load GCash details.';
+        message.className = 'form-message error';
+    }
 }
 
 async function submitOrder(e) {

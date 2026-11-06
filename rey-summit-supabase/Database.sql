@@ -165,6 +165,34 @@ create table public.customer_cart (
     primary key (customer_id, product_id)
 );
 
+-- ---------- GCash checkout details ----------
+create table public.gcash_settings (
+    id             integer primary key default 1 check (id = 1),
+    mobile_number  text,
+    qr_path        text,
+    updated_at     timestamptz not null default now()
+);
+insert into public.gcash_settings (id) values (1) on conflict do nothing;
+
+create or replace function public.rsm_require_gcash_settings()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+    if new.payment_method = 'gcash' and not exists (
+        select 1 from public.gcash_settings
+        where id = 1 and (nullif(trim(mobile_number), '') is not null or qr_path is not null)
+    ) then
+        raise exception using
+            errcode = 'RS001',
+            message = 'GCash payment is not available right now. Please choose another payment method.';
+    end if;
+    return new;
+end $$;
+
+drop trigger if exists rsm_orders_require_gcash_settings on public.orders;
+create trigger rsm_orders_require_gcash_settings
+    before insert on public.orders
+    for each row execute function public.rsm_require_gcash_settings();
+
 -- ---------- indexes ----------
 create index idx_orders_customer on public.orders(customer_id);
 create index idx_orders_status   on public.orders(order_status);
@@ -234,6 +262,7 @@ alter table public.order_items          enable row level security;
 alter table public.counter_sales        enable row level security;
 alter table public.counter_sale_items   enable row level security;
 alter table public.customer_cart        enable row level security;
+alter table public.gcash_settings      enable row level security;
 
 -- The public catalog is readable by anyone; everything else is reachable only
 -- through the security-definer rsm_* functions (no direct table policies).
@@ -273,6 +302,23 @@ grant execute on function public.rsm_can_view_proof(text) to authenticated;
 create policy "sales staff or admin read proofs" on storage.objects for select to authenticated
     using (bucket_id = 'payment-proofs' and public.rsm_can_view_proof(name));
 
+-- ---------- Storage: customer-visible GCash QR codes ----------
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('gcash-assets', 'gcash-assets', true, 5242880,
+        array['image/jpeg','image/png','image/webp'])
+on conflict (id) do update
+    set public = true, file_size_limit = 5242880,
+        allowed_mime_types = array['image/jpeg','image/png','image/webp'];
+
+create policy "public reads gcash qr codes" on storage.objects for select to public
+    using (bucket_id = 'gcash-assets');
+create policy "admins upload gcash qr codes" on storage.objects for insert to authenticated
+    with check (bucket_id = 'gcash-assets' and (storage.foldername(name))[1] = 'gcash' and public.rsm_is_admin());
+create policy "admins update gcash qr codes" on storage.objects for update to authenticated
+    using (bucket_id = 'gcash-assets' and (storage.foldername(name))[1] = 'gcash' and public.rsm_is_admin())
+    with check (bucket_id = 'gcash-assets' and (storage.foldername(name))[1] = 'gcash' and public.rsm_is_admin());
+create policy "admins delete gcash qr codes" on storage.objects for delete to authenticated
+    using (bucket_id = 'gcash-assets' and (storage.foldername(name))[1] = 'gcash' and public.rsm_is_admin());
 
 -- #########################################################
 -- PART 2 — BACK-END FUNCTIONS (replace the PHP files)
@@ -696,7 +742,7 @@ begin
         from (
             select * from public.orders o
             where o.customer_id = v_uid
-              and (not coalesce(p_tracking, false) or o.order_status not in ('completed', 'cancelled'))
+              and (not coalesce(p_tracking, false) or o.order_status <> 'cancelled')
             order by o.order_date desc
             limit case when coalesce(p_tracking, false) then 20 end
         ) t
@@ -1029,6 +1075,81 @@ begin
                                  then round(v_delivered::numeric / v_total_recent * 100) else 0 end);
 end $$;
 
+create or replace function public.rsm_admin_overview_analytics(
+    p_branch text default 'all',
+    p_period text default 'day',
+    p_date text default null)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+    v_b text := case when p_branch = any (public.rsm_int_branches()) then p_branch else 'all' end;
+    v_period text := lower(coalesce(p_period, ''));
+    v_selected date;
+    v_start date;
+    v_end date;
+    v_revenue jsonb;
+    v_statuses jsonb;
+    v_top jsonb;
+begin
+    if not public.rsm_is_admin() then return public.rsm_fail('Admin login required.', 401); end if;
+    if v_period not in ('day', 'month', 'year') then
+        return public.rsm_fail('Choose a valid date period.', 422);
+    end if;
+    begin
+        if coalesce(p_date, '') !~ '^\d{4}-\d{2}-\d{2}$' then
+            raise exception 'invalid date';
+        end if;
+        v_selected := p_date::date;
+    exception when others then
+        return public.rsm_fail('Choose a valid date.', 422);
+    end;
+
+    if v_period = 'day' then
+        v_start := v_selected;
+        v_end := v_selected;
+    elsif v_period = 'month' then
+        v_start := date_trunc('month', v_selected)::date;
+        v_end := (v_start + interval '1 month - 1 day')::date;
+    else
+        v_start := date_trunc('year', v_selected)::date;
+        v_end := (v_start + interval '1 year - 1 day')::date;
+    end if;
+
+    select coalesce(jsonb_agg(jsonb_build_object('sale_date', to_char(g.bucket, 'YYYY-MM-DD'), 'revenue', g.revenue)
+                              order by g.bucket), '[]')
+      into v_revenue
+      from (select case when v_period = 'year'
+                        then date_trunc('month', public.rsm_local(s.sale_date))::date
+                        else public.rsm_local(s.sale_date)::date end as bucket,
+                   sum(s.total_amount) as revenue
+              from public.rsm_int_sales_rows() s
+             where (v_b = 'all' or s.branch = v_b)
+               and public.rsm_local(s.sale_date)::date between v_start and v_end
+             group by 1) g;
+
+    select coalesce(jsonb_agg(jsonb_build_object('order_status', g.order_status, 'order_count', g.n)), '[]')
+      into v_statuses
+      from (select s.order_status, count(*) as n
+              from public.rsm_int_sales_rows() s
+             where (v_b = 'all' or s.branch = v_b)
+               and public.rsm_local(s.sale_date)::date between v_start and v_end
+             group by s.order_status) g;
+
+    select coalesce(jsonb_agg(jsonb_build_object('product_name', g.product_name, 'units_sold', g.units)
+                              order by g.units desc, g.product_name), '[]')
+      into v_top
+      from (select p.product_name, sum(i.quantity) as units
+              from public.rsm_int_item_rows() i
+              join public.products p on p.product_id = i.product_id
+             where (v_b = 'all' or i.branch = v_b)
+               and public.rsm_local(i.sale_date)::date between v_start and v_end
+             group by p.product_id, p.product_name
+             order by units desc, p.product_name limit 5) g;
+
+    return jsonb_build_object(
+        'success', true, 'branch', v_b, 'period', v_period, 'selected_date', v_selected,
+        'daily_revenue', v_revenue, 'monthly_statuses', v_statuses, 'top_products', v_top);
+end $$;
+
 create or replace function public.rsm_admin_branch_comparison(p_branch text default 'all')
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
@@ -1052,6 +1173,86 @@ begin
              where public.rsm_local(s.sale_date)::date between date_trunc('month', v_today)::date and v_today
              group by s.branch) t on t.branch = b.name
         where v_b = 'all' or b.name = v_b));
+end $$;
+
+create or replace function public.rsm_admin_performance_analytics(
+    p_branch text default 'all',
+    p_period text default 'day',
+    p_date text default null)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+    v_b text := case when p_branch = any (public.rsm_int_branches()) then p_branch else 'all' end;
+    v_period text := lower(coalesce(p_period, ''));
+    v_selected date;
+    v_start date;
+    v_end date;
+    v_monthly jsonb;
+    v_fulfillment numeric;
+    v_open int;
+    v_branches jsonb;
+begin
+    if not public.rsm_is_admin() then return public.rsm_fail('Admin login required.', 401); end if;
+    if v_period not in ('day', 'month', 'year') then
+        return public.rsm_fail('Choose a valid date period.', 422);
+    end if;
+    begin
+        if coalesce(p_date, '') !~ '^\d{4}-\d{2}-\d{2}$' then
+            raise exception 'invalid date';
+        end if;
+        v_selected := p_date::date;
+    exception when others then
+        return public.rsm_fail('Choose a valid date.', 422);
+    end;
+
+    if v_period = 'day' then
+        v_start := v_selected;
+        v_end := v_selected;
+    elsif v_period = 'month' then
+        v_start := date_trunc('month', v_selected)::date;
+        v_end := (v_start + interval '1 month - 1 day')::date;
+    else
+        v_start := date_trunc('year', v_selected)::date;
+        v_end := (v_start + interval '1 year - 1 day')::date;
+    end if;
+
+    select jsonb_build_object('revenue', coalesce(sum(s.total_amount), 0), 'order_count', count(*)),
+           case when count(*) > 0
+                then round(count(*) filter (where s.order_status = 'completed')::numeric / count(*) * 100)
+                else 0 end
+      into v_monthly, v_fulfillment
+      from public.rsm_int_sales_rows() s
+     where (v_b = 'all' or s.branch = v_b)
+       and public.rsm_local(s.sale_date)::date between v_start and v_end;
+
+    select count(*) into v_open
+      from public.orders o
+      join public.customers c on c.id = o.customer_id
+     where o.order_status in ('pending','confirmed','preparing','out_for_delivery')
+       and (v_b = 'all' or coalesce(o.branch, c.branch) = v_b);
+
+    select coalesce(jsonb_agg(jsonb_build_object(
+               'name', b.name,
+               'revenue', coalesce(t.revenue, 0),
+               'orders', coalesce(t.n, 0),
+               'fulfillment', case when coalesce(t.n, 0) > 0
+                                   then round(t.completed::numeric / t.n * 100) else 0 end,
+               'open', coalesce(t.open_count, 0)) order by b.ord), '[]')
+      into v_branches
+      from unnest(public.rsm_int_branches()) with ordinality as b(name, ord)
+      left join (
+          select s.branch, sum(s.total_amount) as revenue, count(*) as n,
+                 count(*) filter (where s.order_status = 'completed') as completed,
+                 count(*) filter (where s.order_status in ('pending','confirmed','preparing','out_for_delivery')) as open_count
+            from public.rsm_int_sales_rows() s
+           where public.rsm_local(s.sale_date)::date between v_start and v_end
+           group by s.branch
+      ) t on t.branch = b.name
+     where v_b = 'all' or b.name = v_b;
+
+    return jsonb_build_object(
+        'success', true, 'branch', v_b, 'period', v_period, 'selected_date', v_selected,
+        'monthly', v_monthly, 'fulfillment_rate', v_fulfillment,
+        'open_deliveries', v_open, 'branches', v_branches);
 end $$;
 
 create or replace function public.rsm_admin_delivery_data(p_branch text default 'all')
@@ -1144,6 +1345,91 @@ begin
             where v_b = 'all' or cs.branch = v_b
         ) u
     ), '[]'::jsonb));
+end $$;
+
+create or replace function public.rsm_admin_sales_list_filtered(
+    p_branch text default 'all',
+    p_period text default 'day',
+    p_date text default null)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+    v_b text := case when p_branch = any (public.rsm_int_branches()) then p_branch else 'all' end;
+    v_period text := lower(coalesce(p_period, ''));
+    v_selected date;
+    v_start date;
+    v_end date;
+    v_orders jsonb;
+begin
+    if not public.rsm_is_admin() then return public.rsm_fail('Admin login required.', 401); end if;
+    if v_period not in ('day', 'month', 'year') then
+        return public.rsm_fail('Choose a valid date period.', 422);
+    end if;
+    begin
+        if coalesce(p_date, '') !~ '^\d{4}-\d{2}-\d{2}$' then
+            raise exception 'invalid date';
+        end if;
+        v_selected := p_date::date;
+    exception when others then
+        return public.rsm_fail('Choose a valid date.', 422);
+    end;
+
+    if v_period = 'day' then
+        v_start := v_selected;
+        v_end := v_selected;
+    elsif v_period = 'month' then
+        v_start := date_trunc('month', v_selected)::date;
+        v_end := (v_start + interval '1 month - 1 day')::date;
+    else
+        v_start := date_trunc('year', v_selected)::date;
+        v_end := (v_start + interval '1 year - 1 day')::date;
+    end if;
+
+    select coalesce(jsonb_agg(u.j order by u.day desc, u.sort desc), '[]')
+      into v_orders
+      from (
+          select to_char(public.rsm_local(o.order_date), 'YYYY-MM-DD') as day,
+                 to_char(public.rsm_local(o.order_date), 'YYYY-MM-DD HH24:MI:SS') || lpad(o.order_id::text, 12, '0') as sort,
+                 jsonb_build_object(
+                     'order_id', o.order_id, 'total_amount', o.total_amount,
+                     'delivery_address', o.delivery_address,
+                     'order_day', to_char(public.rsm_local(o.order_date), 'YYYY-MM-DD'),
+                     'order_time', to_char(public.rsm_local(o.order_date), 'HH12:MI:SS AM'),
+                     'sale_sort', to_char(public.rsm_local(o.order_date), 'YYYY-MM-DD HH24:MI:SS'),
+                     'username', c.username, 'branch', coalesce(o.branch, c.branch),
+                     'delivered_by', coalesce(nullif(sa.full_name, ''), 'N/A'),
+                     'sale_number', '#' || o.order_id, 'sale_type', 'Online',
+                     'payment_method', case when o.payment_method = 'gcash' then 'GCash' else 'Cash' end,
+                     'location', coalesce(nullif(o.delivery_address, ''),
+                                          nullif(coalesce(o.branch, c.branch), ''), '—')) as j
+            from public.orders o
+            join public.customers c on c.id = o.customer_id
+            left join public.staff_accounts sa on sa.staff_id = o.delivered_by_staff_id
+           where o.order_status <> 'cancelled'
+             and (v_b = 'all' or coalesce(o.branch, c.branch) = v_b)
+             and public.rsm_local(o.order_date)::date between v_start and v_end
+          union all
+          select to_char(public.rsm_local(cs.sale_date), 'YYYY-MM-DD'),
+                 to_char(public.rsm_local(cs.sale_date), 'YYYY-MM-DD HH24:MI:SS') || lpad(cs.sale_id::text, 12, '0'),
+                 jsonb_build_object(
+                     'sale_id', cs.sale_id,
+                     'sale_type', case when cs.sale_type = 'walk_in' then 'Walk-in' else 'Call' end,
+                     'customer_name', cs.customer_name, 'username', cs.customer_name,
+                     'location', cs.location,
+                     'payment_method', case when cs.payment_method = 'gcash' then 'GCash' else 'Cash' end,
+                     'branch', cs.branch, 'delivered_by', cs.delivered_by,
+                     'total_amount', cs.total_amount,
+                     'order_day', to_char(public.rsm_local(cs.sale_date), 'YYYY-MM-DD'),
+                     'order_time', to_char(public.rsm_local(cs.sale_date), 'HH12:MI:SS AM'),
+                     'sale_sort', to_char(public.rsm_local(cs.sale_date), 'YYYY-MM-DD HH24:MI:SS'),
+                     'sale_number', 'S-' || lpad(cs.sale_id::text, 6, '0'))
+            from public.counter_sales cs
+           where (v_b = 'all' or cs.branch = v_b)
+             and public.rsm_local(cs.sale_date)::date between v_start and v_end
+      ) u;
+
+    return jsonb_build_object(
+        'success', true, 'branch', v_b, 'period', v_period,
+        'selected_date', v_selected, 'orders', v_orders);
 end $$;
 
 create or replace function public.rsm_admin_create_counter_sale(p_payload jsonb, p_selected_branch text default 'all')
@@ -1391,6 +1677,60 @@ begin
     return jsonb_build_object('success', true, 'message', 'Staff access status updated.');
 end $$;
 
+create or replace function public.rsm_get_gcash_settings()
+returns jsonb language sql stable security definer set search_path = public as $$
+    select jsonb_build_object(
+        'success', true,
+        'mobile_number', s.mobile_number,
+        'qr_path', s.qr_path
+    )
+    from public.gcash_settings s
+    where s.id = 1
+$$;
+
+create or replace function public.rsm_admin_save_gcash_settings(
+    p_mobile_number text,
+    p_qr_path text default null,
+    p_remove_qr boolean default false
+)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+    v_mobile text := nullif(trim(coalesce(p_mobile_number, '')), '');
+    v_qr text := nullif(trim(coalesce(p_qr_path, '')), '');
+begin
+    if not public.rsm_is_admin() then return public.rsm_fail('Admin login required.', 401); end if;
+    if v_mobile is not null and v_mobile !~ '^[0-9+() -]{7,20}$' then
+        return public.rsm_fail('Enter a valid GCash mobile number.', 422);
+    end if;
+    if v_qr is not null and (
+        v_qr !~ '^gcash/[^/]+$'
+        or not exists (
+            select 1 from storage.objects
+            where bucket_id = 'gcash-assets' and name = v_qr
+        )
+    ) then
+        return public.rsm_fail('Upload a valid GCash QR image.', 422);
+    end if;
+
+    insert into public.gcash_settings (id, mobile_number, qr_path, updated_at)
+    values (1, v_mobile, v_qr, now())
+    on conflict (id) do update
+        set mobile_number = excluded.mobile_number,
+            qr_path = case
+                when p_remove_qr then null
+                when v_qr is not null then v_qr
+                else public.gcash_settings.qr_path
+            end,
+            updated_at = now();
+
+    return jsonb_build_object(
+        'success', true,
+        'message', 'GCash details saved.',
+        'mobile_number', v_mobile,
+        'qr_path', case when p_remove_qr then null else coalesce(v_qr, (select qr_path from public.gcash_settings where id = 1)) end
+    );
+end $$;
+
 -- =========================================================
 --  Permissions: nothing is callable by anon except the three public RPCs;
 --  rsm_int_* helpers are internal only.
@@ -1413,10 +1753,14 @@ end $$;
 grant execute on function public.rsm_login_email(text) to anon, authenticated;
 grant execute on function public.rsm_check_registration(text, text, text, text) to anon, authenticated;
 grant execute on function public.rsm_get_products() to anon, authenticated;
+grant execute on function public.rsm_admin_overview_analytics(text, text, text) to authenticated;
+grant execute on function public.rsm_admin_performance_analytics(text, text, text) to authenticated;
+grant execute on function public.rsm_admin_sales_list_filtered(text, text, text) to authenticated;
 -- used inside storage RLS policies for logged-in users
 grant execute on function public.rsm_is_admin(), public.rsm_staff_role(), public.rsm_staff_branch()
     to authenticated;
 
+notify pgrst, 'reload schema';
 
 -- #########################################################
 -- PART 3 — SAMPLE DATA

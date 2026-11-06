@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overview | Rey Summit</title>
-    <link rel="stylesheet" href="admin_sections.css?v=16">
+    <link rel="stylesheet" href="admin_sections.css?v=22">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-api.js"></script>
@@ -31,7 +31,15 @@
         </aside>
 
         <main>
-            <section class="panel branch-filter-panel">
+            <header class="topbar">
+                <div>
+                    <div class="kicker">Operations overview</div>
+                    <h2>Business at a glance.</h2>
+                    <p class="intro">A live view of sales, stock, and branch operations.</p>
+                </div>
+                <div class="date-chip" id="reportDate"></div>
+            </header>
+            <section class="panel branch-filter-panel overview-filter-panel">
                 <label for="adminBranchFilter">Viewing branch</label>
                 <select id="adminBranchFilter">
                     <option value="all">All branches</option>
@@ -41,6 +49,19 @@
                     <option value="San Luis">San Luis</option>
                 </select>
                 <span id="adminBranchFilterStatus" aria-live="polite"></span>
+                <form id="overviewDateFilter" class="overview-date-filter">
+                    <label for="overviewPeriod">Filter date</label>
+                    <select id="overviewPeriod" data-period>
+                        <option value="day">Day</option>
+                        <option value="month">Month</option>
+                        <option value="year">Year</option>
+                    </select>
+                    <input id="overviewDay" type="date" data-day aria-label="Select day">
+                    <input id="overviewMonth" type="month" data-month aria-label="Select month" hidden disabled>
+                    <input id="overviewYear" type="number" min="1" max="9999" step="1" data-year aria-label="Select year" hidden disabled>
+                    <button class="overview-date-apply" type="submit">Apply</button>
+                    <span id="overviewFilterStatus" aria-live="polite"></span>
+                </form>
             </section>
             <section class="panel analytics-panel" aria-labelledby="analyticsTitle">
                 <h3 id="analyticsTitle">Business analytics</h3>
@@ -49,7 +70,7 @@
                     <div class="analytics-heading">
                         <div>
                             <h4>Revenue trend</h4>
-                            <p>Daily sales · last 7 days</p>
+                            <p id="revenuePeriodNote">Revenue by day · selected date</p>
                         </div>
                         <span class="chart-legend"><i></i>Revenue</span>
                     </div>
@@ -62,7 +83,7 @@
                         <div class="analytics-heading">
                             <div>
                                 <h4 id="orderStatusTitle">Order status</h4>
-                                <p>This month</p>
+                                <p id="orderStatusPeriodNote">Selected date</p>
                             </div>
                         </div>
                         <div id="orderStatusChart" class="order-status-chart">
@@ -73,7 +94,7 @@
                         <div class="analytics-heading">
                             <div>
                                 <h4 id="topProductsTitle">Top products</h4>
-                                <p>Units sold · last 30 days</p>
+                                <p id="topProductsPeriodNote">Units sold · selected date</p>
                             </div>
                         </div>
                         <div id="topProductsChart" class="top-products-chart">
@@ -125,6 +146,6 @@
             </section>
         </main>
     </div>
-    <script src="admin_sections.js?v=17"></script>
+    <script src="admin_sections.js?v=22"></script>
 </body>
 </html>
