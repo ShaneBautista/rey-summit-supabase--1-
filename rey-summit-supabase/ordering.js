@@ -54,11 +54,14 @@ async function loadAccountDetails() {
 
         address.value = data.account.address || '';
         phone.value = data.account.phone || '';
-        if (!data.account.branch) {
+        if (!String(data.account.branch || '').trim()) {
             throw new Error('Choose your branch in Account before ordering.');
         }
-        if (!address.value.trim() || !/^[0-9]{11}$/.test(phone.value.trim())) {
-            throw new Error('Add a delivery address and valid contact number in Account before checkout.');
+        if (!address.value.trim()) {
+            throw new Error('Add a delivery address in Account before checkout.');
+        }
+        if (!/^[0-9]{11}$/.test(phone.value.trim())) {
+            throw new Error('Add a valid contact number in Account before checkout.');
         }
         accountDetailsReady = true;
         message.textContent = '';
@@ -483,6 +486,14 @@ async function submitOrder(e) {
     const btn = document.getElementById('placeOrderBtn');
     const checkoutForm = e.currentTarget;
     const { items, count } = cartTotals();
+
+    if (!accountDetailsReady) {
+        const accountMessage = document.getElementById('checkoutAccountMessage');
+        msg.textContent = accountMessage.textContent
+            || 'Add a branch and delivery address in Account before checkout.';
+        msg.className = 'form-message error';
+        return;
+    }
 
     if (count === 0) {
         msg.textContent = 'Your cart is empty.';

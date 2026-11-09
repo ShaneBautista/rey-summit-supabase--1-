@@ -23,7 +23,7 @@
     <main class="account-shell">
         <p class="eyebrow">Account</p>
         <h1>Your details</h1>
-        <p class="account-intro">Update your email, delivery address, and contact number.</p>
+        <p class="account-intro">Update your email, branch, delivery address, and contact number.</p>
 
         <section class="account-panel">
             <form id="accountForm" class="account-form">
@@ -51,6 +51,52 @@
                 <p id="accountMessage" class="account-message" aria-live="polite"></p>
                 <button type="submit" class="account-save" id="accountSave">Save details</button>
             </form>
+        </section>
+
+        <section class="account-panel support-panel">
+            <div class="support-header">
+                <div>
+                    <p class="eyebrow">Support</p>
+                    <h2>Customer support ticket</h2>
+                </div>
+            </div>
+
+            <form id="supportTicketForm" class="account-form support-form">
+                <label for="supportSubject">Subject</label>
+                <input id="supportSubject" name="subject" type="text" maxlength="150" placeholder="Brief summary of your issue" required>
+
+                <label for="supportCategory">Category</label>
+                <select id="supportCategory" name="category" required>
+                    <option value="">Select category</option>
+                    <option value="Order issue">Order issue</option>
+                    <option value="Account issue">Account issue</option>
+                    <option value="Delivery issue">Delivery issue</option>
+                    <option value="Payment issue">Payment issue</option>
+                    <option value="Product inquiry">Product inquiry</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label for="supportPriority">Priority</label>
+                <select id="supportPriority" name="priority" required>
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+
+                <label for="supportMessage">Message</label>
+                <textarea id="supportMessage" name="message" maxlength="2000" placeholder="Describe the issue, steps taken, and any relevant order details." required></textarea>
+
+                <p id="supportTicketMessage" class="account-message" aria-live="polite"></p>
+                <button type="submit" class="account-save" id="supportTicketSubmit">Submit ticket</button>
+            </form>
+
+            <div class="support-list-wrap">
+                <h3>Your tickets</h3>
+                <div id="supportTicketList" class="support-ticket-list" aria-live="polite">
+                    <p class="support-empty">Loading your tickets...</p>
+                </div>
+            </div>
         </section>
     </main>
 

@@ -56,6 +56,23 @@ create table public.customers (
 create unique index customers_username_key on public.customers (lower(username));
 create unique index customers_email_key    on public.customers (lower(email));
 
+-- ---------- support tickets ----------
+create table public.support_tickets (
+    ticket_id     bigint generated always as identity primary key,
+    customer_id   uuid not null references public.customers(id) on delete cascade,
+    category      text not null check (category in ('Order issue','Account issue','Delivery issue','Payment issue','Product inquiry','Other')),
+    priority      text not null default 'medium' check (priority in ('low','medium','high','urgent')),
+    status        text not null default 'open' check (status in ('open','in_progress','pending_customer','resolved','closed')),
+    subject       text not null,
+    message       text not null,
+    created_at    timestamptz not null default now(),
+    updated_at    timestamptz not null default now()
+);
+alter table public.support_tickets enable row level security;
+
+create index support_tickets_customer_idx on public.support_tickets (customer_id, created_at desc);
+create index support_tickets_status_idx on public.support_tickets (status, created_at desc);
+
 -- ---------- admins ----------
 create table public.admins (
     admin_id    integer generated always as identity primary key,
@@ -226,7 +243,7 @@ begin
     if m->>'account_type' = 'customer' then
         insert into public.customers (id, username, email, address, branch, phone)
         values (new.id, trim(m->>'username'), new.email,
-                trim(m->>'address'), nullif(trim(m->>'branch'), ''), trim(m->>'phone'));
+                trim(coalesce(m->>'address', '')), nullif(trim(m->>'branch'), ''), trim(m->>'phone'));
     end if;
     return new;
 end $$;
@@ -401,10 +418,11 @@ declare
     v_user text := trim(coalesce(p_username, ''));
     v_email text := trim(coalesce(p_email, ''));
 begin
-    if v_user = '' or v_email = '' or trim(coalesce(p_branch, '')) = '' or trim(coalesce(p_phone, '')) = '' then
+    if v_user = '' or v_email = '' or trim(coalesce(p_phone, '')) = '' then
         return 'All fields are required.';
     end if;
-    if not (trim(p_branch) = any (public.rsm_int_branches())) then
+    if trim(coalesce(p_branch, '')) <> ''
+       and not (trim(p_branch) = any (public.rsm_int_branches())) then
         return 'Please select a valid branch.';
     end if;
     if char_length(v_user) > 50 then return 'Username is too long.'; end if;
@@ -509,6 +527,142 @@ begin
 
     return jsonb_build_object('success', true,
                               'email_changed', lower(v_email) <> lower(v_row.email));
+end $$;
+
+create or replace function public.rsm_create_support_ticket(
+    p_subject text, p_category text, p_priority text, p_message text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+    v_uid uuid := auth.uid();
+    v_subject text := trim(coalesce(p_subject, ''));
+    v_message text := trim(coalesce(p_message, ''));
+    v_category text := lower(trim(coalesce(p_category, '')));
+    v_priority text := lower(trim(coalesce(p_priority, 'medium')));
+    v_ticket_id bigint;
+begin
+    if v_uid is null or not exists (select 1 from public.customers where id = v_uid) then
+        return public.rsm_fail('Please log in to create a support ticket.', 401);
+    end if;
+    if v_subject = '' or char_length(v_subject) > 150 then
+        return public.rsm_fail('Please keep the ticket subject between 1 and 150 characters.', 400);
+    end if;
+    if v_message = '' or char_length(v_message) > 2000 then
+        return public.rsm_fail('Please enter a ticket message between 1 and 2000 characters.', 400);
+    end if;
+    if v_category not in ('order issue','account issue','delivery issue','payment issue','product inquiry','other') then
+        return public.rsm_fail('Please choose a valid ticket category.', 400);
+    end if;
+    if v_priority not in ('low','medium','high','urgent') then
+        return public.rsm_fail('Please choose a valid priority level.', 400);
+    end if;
+
+    insert into public.support_tickets (customer_id, category, priority, subject, message)
+    values (
+        v_uid,
+        case v_category
+            when 'order issue' then 'Order issue'
+            when 'account issue' then 'Account issue'
+            when 'delivery issue' then 'Delivery issue'
+            when 'payment issue' then 'Payment issue'
+            when 'product inquiry' then 'Product inquiry'
+            when 'other' then 'Other'
+        end,
+        v_priority,
+        v_subject,
+        v_message
+    )
+    returning ticket_id into v_ticket_id;
+
+    return jsonb_build_object(
+        'success', true,
+        'ticket_id', v_ticket_id,
+        'message', 'Support ticket submitted successfully.'
+    );
+end $$;
+
+create or replace function public.rsm_get_my_support_tickets()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+    v_uid uuid := auth.uid();
+begin
+    if v_uid is null or not exists (select 1 from public.customers where id = v_uid) then
+        return public.rsm_fail('Please log in to view your support tickets.', 401);
+    end if;
+
+    return jsonb_build_object(
+        'success', true,
+        'tickets', coalesce((
+            select jsonb_agg(jsonb_build_object(
+                'ticket_id', st.ticket_id,
+                'category', st.category,
+                'priority', st.priority,
+                'status', st.status,
+                'subject', st.subject,
+                'message', st.message,
+                'created_at', public.rsm_iso(st.created_at),
+                'updated_at', public.rsm_iso(st.updated_at)
+            ) order by st.created_at desc)
+            from public.support_tickets st
+            where st.customer_id = v_uid
+        ), '[]'::jsonb)
+    );
+end $$;
+
+create or replace function public.rsm_admin_support_tickets()
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+    if not public.rsm_is_admin() then
+        return public.rsm_fail('Admin access required.', 401);
+    end if;
+
+    return jsonb_build_object(
+        'success', true,
+        'tickets', coalesce((
+            select jsonb_agg(jsonb_build_object(
+                'ticket_id', st.ticket_id,
+                'customer_id', st.customer_id,
+                'username', c.username,
+                'email', c.email,
+                'branch', c.branch,
+                'category', st.category,
+                'priority', st.priority,
+                'status', st.status,
+                'subject', st.subject,
+                'message', st.message,
+                'created_at', public.rsm_iso(st.created_at),
+                'updated_at', public.rsm_iso(st.updated_at)
+            ) order by st.created_at desc)
+            from public.support_tickets st
+            join public.customers c on c.id = st.customer_id
+        ), '[]'::jsonb)
+    );
+end $$;
+
+create or replace function public.rsm_update_support_ticket_status(
+    p_ticket_id bigint, p_status text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+    v_status text := lower(trim(coalesce(p_status, '')));
+begin
+    if not public.rsm_is_admin() then
+        return public.rsm_fail('Admin access required.', 401);
+    end if;
+    if p_ticket_id is null or p_ticket_id < 1 then
+        return public.rsm_fail('Invalid ticket ID.', 400);
+    end if;
+    if v_status not in ('open','in_progress','pending_customer','resolved','closed') then
+        return public.rsm_fail('Please choose a valid ticket status.', 400);
+    end if;
+
+    if not exists (select 1 from public.support_tickets where ticket_id = p_ticket_id) then
+        return public.rsm_fail('Ticket not found.', 404);
+    end if;
+
+    update public.support_tickets
+       set status = v_status, updated_at = now()
+     where ticket_id = p_ticket_id;
+
+    return jsonb_build_object('success', true, 'message', 'Ticket status updated.');
 end $$;
 
 create or replace function public.rsm_get_cart()
@@ -898,6 +1052,18 @@ begin
       into o from public.orders
      where order_id = p_order_id and branch = s.branch for update;
 
+    if p_status = 'cancelled' then
+        if not found or not (
+            (s.role = 'sales' and o.order_status in ('pending','confirmed'))
+            or (s.role = 'delivery' and o.order_status in ('preparing','out_for_delivery'))
+        ) then
+            return public.rsm_fail('This order has changed. Refresh the queue and try again.', 409);
+        end if;
+        update public.orders set order_status = 'cancelled'
+         where order_id = p_order_id and branch = s.branch;
+        return jsonb_build_object('success', true, 'message', 'Order cancelled.');
+    end if;
+
     v_next := case
         when s.role = 'sales' and o.order_status = 'pending'   then 'confirmed'
         when s.role = 'sales' and o.order_status = 'confirmed' then 'preparing'
@@ -905,7 +1071,7 @@ begin
         when s.role = 'delivery' and o.order_status = 'out_for_delivery' then 'completed'
     end;
 
-    if p_status is null or p_status not in ('confirmed','preparing','out_for_delivery','completed') then
+    if p_status is null or p_status not in ('confirmed','preparing','out_for_delivery','completed','cancelled') then
         return public.rsm_fail('Invalid order update.', 400);
     end if;
     if not found or v_next is null or v_next <> p_status then

@@ -83,6 +83,90 @@ function wireAdminLogoutConfirmation() {
     });
 }
 
+async function loadSupportTickets() {
+    const container = document.getElementById('supportTicketsList');
+    if (!container) return;
+
+    try {
+        const response = await rsmApi('admin_support_tickets.php');
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Could not load support tickets.');
+        }
+
+        if (!Array.isArray(data.tickets) || data.tickets.length === 0) {
+            container.innerHTML = '<p class="empty">No support tickets have been submitted yet.</p>';
+            return;
+        }
+
+        const statusOptions = ['open', 'in_progress', 'pending_customer', 'resolved', 'closed'];
+        container.innerHTML = data.tickets.map(ticket => {
+            const createdAt = new Date(ticket.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+            const status = String(ticket.status || 'open');
+            return `
+                <article class="support-ticket-row">
+                    <div class="support-ticket-meta">
+                        <span>#${ticket.ticket_id}</span>
+                        <span>${escapeAdmin(ticket.username || 'Customer')}</span>
+                        <span>${escapeAdmin(ticket.branch || 'Branch')}</span>
+                        <span>${createdAt}</span>
+                    </div>
+                    <strong>${escapeAdmin(ticket.subject || 'Untitled ticket')}</strong>
+                    <div class="support-ticket-meta">
+                        <span class="support-ticket-status ${status}">${formatSupportStatus(status)}</span>
+                        <span class="support-ticket-priority ${ticket.priority || 'medium'}">${formatSupportPriority(ticket.priority || 'medium')}</span>
+                        <span>${escapeAdmin(ticket.category || 'Other')}</span>
+                    </div>
+                    <div class="support-ticket-meta">
+                        <span>${escapeAdmin(ticket.email || 'No email')}</span>
+                    </div>
+                    <div class="support-ticket-message">${escapeAdmin(ticket.message || '')}</div>
+                    <label>
+                        <span class="sr-only">Update ticket status</span>
+                        <select data-support-ticket-status data-ticket-id="${ticket.ticket_id}" aria-label="Update ticket status">
+                            ${statusOptions.map(option => `<option value="${option}" ${option === status ? 'selected' : ''}>${formatSupportStatus(option)}</option>`).join('')}
+                        </select>
+                    </label>
+                </article>
+            `;
+        }).join('');
+
+        container.querySelectorAll('[data-support-ticket-status]').forEach(select => {
+            select.addEventListener('change', async (event) => {
+                const target = event.target;
+                const ticketId = Number(target.dataset.ticketId) || 0;
+                const status = target.value;
+                try {
+                    const response = await rsmApi('admin_support_tickets.php', {
+                        method: 'POST',
+                        body: { ticket_id: ticketId, status },
+                    });
+                    const data = await response.json();
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.message || 'Could not update the ticket status.');
+                    }
+                    await loadSupportTickets();
+                } catch (error) {
+                    const feedback = document.getElementById('supportTicketsList');
+                    if (feedback) {
+                        feedback.insertAdjacentHTML('beforeend', `<p class="empty">${escapeAdmin(error.message || 'Could not update the ticket.')}</p>`);
+                    }
+                }
+            });
+        });
+    } catch (error) {
+        container.innerHTML = `<p class="empty">${escapeAdmin(error.message || 'Support tickets are unavailable.')}</p>`;
+    }
+}
+
+function formatSupportStatus(value) {
+    return String(value || 'Open').replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function formatSupportPriority(value) {
+    return String(value || 'Medium').charAt(0).toUpperCase() + String(value || 'Medium').slice(1);
+}
+
 function normalizeAdminNavigation() {
     const nav = document.querySelector('.shell > aside > nav');
     if (!nav) return;
@@ -164,7 +248,10 @@ wireAdminLogoutConfirmation();
         if (adminName) adminName.textContent = data.admin.name || 'Admin';
         document.getElementById('adminGreeting').textContent = `Signed in as ${data.admin.name || 'administrator'} · ${data.branch === 'all' ? 'All branches' : data.branch}`;
         setupAdminBranchFilter(data.branch || 'all');
-        if (page === 'overview') renderOverview(data);
+        if (page === 'overview') {
+            await loadSupportTickets();
+            renderOverview(data);
+        }
         if (page === 'inventory') await loadInventory();
         if (page === 'forecasting') renderForecast(data);
         if (page === 'sales') await loadSales();
@@ -990,11 +1077,19 @@ function renderDelivery(orders) {
     }));
 }
 
+let salesExportData = null;
+let salesExportBound = false;
+
 async function loadSales() {
     const table = document.getElementById('salesTable');
     table.innerHTML = '<p class="empty">Loading sales...</p>';
     try {
         await setupSaleForm();
+        const exportButton = document.getElementById('exportSales');
+        if (!salesExportBound) {
+            exportButton.addEventListener('click', downloadSalesCsv);
+            salesExportBound = true;
+        }
         const selection = setupAdminDateFilter('salesDateFilter', loadSalesData);
         if (!selection) throw new Error('The sales date filter is unavailable.');
         await loadSalesData(selection.period, selection.date);
@@ -1008,7 +1103,10 @@ let salesFilterRequest = 0;
 async function loadSalesData(period, date) {
     const table = document.getElementById('salesTable');
     const status = document.querySelector('#salesDateFilter [data-status]');
+    const exportButton = document.getElementById('exportSales');
     const request = ++salesFilterRequest;
+    salesExportData = null;
+    exportButton.disabled = true;
     table.innerHTML = '<p class="empty">Loading sales...</p>';
     status.textContent = 'Loading sales...';
     try {
@@ -1030,6 +1128,8 @@ async function loadSalesData(period, date) {
             branchField.disabled = false;
         }
         renderSales(data.orders);
+        salesExportData = { orders: data.orders, period, date };
+        exportButton.disabled = data.orders.length === 0;
         const periodLabel = period === 'day' ? 'selected day' : period === 'month' ? 'selected month' : 'selected year';
         status.textContent = `Showing sales for the ${periodLabel}.`;
     } catch (error) {
@@ -1037,6 +1137,43 @@ async function loadSalesData(period, date) {
         table.innerHTML = `<p class="empty">${escapeAdmin(error.message || 'Could not load sales.')}</p>`;
         status.textContent = error.message || 'Could not load sales.';
     }
+}
+
+function downloadSalesCsv() {
+    if (!salesExportData || !salesExportData.orders.length) return;
+
+    const columns = [
+        ['Order #', order => order.sale_number || `#${order.order_id || order.sale_id}`],
+        ['Date', order => order.order_day],
+        ['Time', order => order.order_time],
+        ['Type', order => order.sale_type || 'Online'],
+        ['Customer', order => order.customer_name || order.username],
+        ['Branch', order => order.branch],
+        ['Location', order => order.location],
+        ['Payment', order => order.payment_method],
+        ['Delivered By', order => order.delivered_by],
+        ['Total', order => order.total_amount],
+    ];
+    const csvCell = value => {
+        let text = value == null ? '' : String(value);
+        if (/^[\t\r\n ]*[=+\-@]/.test(text)) text = `'${text}`;
+        return `"${text.replace(/"/g, '""')}"`;
+    };
+    const rows = [
+        columns.map(([heading]) => csvCell(heading)).join(','),
+        ...salesExportData.orders.map(order => columns.map(([, getValue]) => csvCell(getValue(order))).join(',')),
+    ];
+    const csv = `\uFEFF${rows.join('\r\n')}`;
+    const fileDate = salesExportData.date.replace(/[^0-9-]/g, '');
+    const fileName = `sales-${salesExportData.period}-${fileDate}.csv`;
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 let saleProducts = [];

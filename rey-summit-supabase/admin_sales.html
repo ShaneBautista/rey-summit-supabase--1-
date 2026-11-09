@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales | Rey Summit</title>
-    <link rel="stylesheet" href="admin_sections.css?v=22">
+    <link rel="stylesheet" href="admin_sections.css?v=24">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-api.js"></script>
@@ -82,6 +82,9 @@
                         <input type="month" data-month aria-label="Select month" hidden disabled>
                         <input type="number" data-year min="1" max="9999" step="1" aria-label="Select year" hidden disabled>
                         <button class="overview-date-apply" type="submit">Apply</button>
+                        <button class="secondary-button sales-export-button" id="exportSales" type="button" aria-label="Download sales as CSV" title="Download sales as CSV" disabled>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12m0 0 5-5m-5 5-5-5M5 20h14"></path></svg>
+                        </button>
                         <span data-status aria-live="polite"></span>
                     </form>
                 </div>

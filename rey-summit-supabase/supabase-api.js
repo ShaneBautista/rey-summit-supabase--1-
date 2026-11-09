@@ -43,7 +43,8 @@
         const { data, error } = await sb.rpc(name, args || {});
         if (error) {
             console.error(name, error);
-            return fail(SERVER_ERROR, 500);
+            const msg = error.message || error.details || SERVER_ERROR;
+            return fail(msg, 500);
         }
         return respond(data);
     }
@@ -192,8 +193,40 @@
             return res;
         },
 
+        'customer_support_ticket.php': async (o) => {
+            if (!(await hasSession())) return fail('Please log in to manage support tickets.', 401);
+            const method = (o.method || 'GET').toUpperCase();
+            if (method === 'GET') return rpc('rsm_get_my_support_tickets');
+            const f = readBody(o.body);
+            return rpc('rsm_create_support_ticket', {
+                p_subject: f.subject,
+                p_category: f.category,
+                p_priority: f.priority,
+                p_message: f.message,
+            });
+        },
+
+        'admin_support_tickets.php': async (o) => {
+            const me = await rpc('rsm_admin_me');
+            if (me.status === 401) return me;
+            const method = (o.method || 'GET').toUpperCase();
+            if (method === 'GET') return rpc('rsm_admin_support_tickets');
+            const f = readBody(o.body);
+            return rpc('rsm_update_support_ticket_status', {
+                p_ticket_id: Number(f.ticket_id) || 0,
+                p_status: f.status,
+            });
+        },
+
         'place_order.php': async (o) => {
             if (!(await hasSession())) return fail('Please log in before placing an order.', 401);
+            const accountResponse = await rpc('rsm_get_account');
+            const accountData = await accountResponse.json();
+            if (!accountResponse.ok || !accountData.success) return accountResponse;
+            if (!String(accountData.account?.address || '').trim()
+                || !BRANCHES.includes(accountData.account?.branch)) {
+                return fail('Add a branch and delivery address in Account before checkout.');
+            }
             const f = readBody(o.body);
             const method = String(f.payment_method || '').trim().toLowerCase();
             let proofPath = null;
@@ -427,7 +460,7 @@
 
         async register(f) {
             const msg = await sb.rpc('rsm_check_registration', {
-                p_username: f.username, p_email: f.email, p_branch: f.branch, p_phone: f.phone,
+                p_username: f.username, p_email: f.email, p_branch: '', p_phone: f.phone,
             });
             if (msg.error) return { success: false, message: 'Something went wrong. Please try again.' };
             if (msg.data) return { success: false, message: msg.data };
@@ -436,8 +469,8 @@
             const { error } = await sb.auth.signUp({
                 email: f.email.trim(), password: f.password,
                 options: { data: {
-                    account_type: 'customer', username: f.username.trim(), address: f.address.trim(),
-                    branch: f.branch.trim(), phone: f.phone.trim(),
+                    account_type: 'customer', username: f.username.trim(), address: '',
+                    branch: '', phone: f.phone.trim(),
                 } },
             });
             if (error) return { success: false, message: 'Something went wrong. Please try again.' };

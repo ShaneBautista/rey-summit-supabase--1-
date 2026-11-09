@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const reportDate = document.getElementById('reportDate');
     reportDate.textContent = new Date().toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric', year:'numeric' });
     wireStaffLogoutConfirmation();
+    const openCancelConfirmation = wireStaffCancelConfirmation();
     document.getElementById('refreshStaffOrders').addEventListener('click', loadStaffOrders);
     document.getElementById('staffOrderQueue').addEventListener('click', event => {
         const reviewButton = event.target.closest('[data-review-decision]');
@@ -14,11 +15,67 @@ document.addEventListener('DOMContentLoaded', () => {
             reviewGcashPayment(reviewButton.dataset.orderId, reviewButton.dataset.reviewDecision);
             return;
         }
+        const cancelButton = event.target.closest('[data-cancel-order]');
+        if (cancelButton) {
+            openCancelConfirmation(cancelButton);
+            return;
+        }
         const button = event.target.closest('[data-next-status]');
         if (button) advanceStaffOrder(button.dataset.orderId, button.dataset.nextStatus);
     });
     loadStaffOrders();
 });
+
+function wireStaffCancelConfirmation() {
+    const modal = document.createElement('div');
+    modal.className = 'admin-logout-overlay';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'staffCancelTitle');
+    modal.setAttribute('aria-describedby', 'staffCancelMessage');
+    modal.innerHTML = `
+        <div class="admin-logout-card">
+            <h2 id="staffCancelTitle">Cancel order?</h2>
+            <p id="staffCancelMessage"></p>
+            <div class="admin-logout-actions">
+                <button type="button" class="admin-logout-cancel">Keep order</button>
+                <button type="button" class="admin-logout-confirm">Confirm</button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+
+    const keepButton = modal.querySelector('.admin-logout-cancel');
+    const confirmButton = modal.querySelector('.admin-logout-confirm');
+    let activeCancelButton = null;
+
+    const closeModal = () => {
+        modal.classList.remove('open');
+        if (activeCancelButton?.isConnected) activeCancelButton.focus();
+        activeCancelButton = null;
+    };
+
+    keepButton.addEventListener('click', closeModal);
+    confirmButton.addEventListener('click', () => {
+        const orderId = activeCancelButton?.dataset.orderId;
+        closeModal();
+        if (orderId) cancelStaffOrder(orderId);
+    });
+    modal.addEventListener('click', event => {
+        if (event.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && modal.classList.contains('open')) closeModal();
+    });
+
+    return cancelButton => {
+        activeCancelButton = cancelButton;
+        const orderNumber = String(cancelButton.dataset.orderId).padStart(6, '0');
+        modal.querySelector('#staffCancelMessage').textContent =
+            `Are you sure you want to cancel order #${orderNumber}? This action cannot be undone.`;
+        modal.classList.add('open');
+        keepButton.focus();
+    };
+}
 
 function wireStaffLogoutConfirmation() {
     const logoutLinks = document.querySelectorAll('.aside-footer .logout');
@@ -151,7 +208,10 @@ function renderStaffOrder(order, role) {
     return `<article class="staff-order-card">
         <div class="staff-order-head">
             <div><h4>#${String(order.order_id).padStart(6, '0')}</h4><time>${formattedDate}</time></div>
-            <span class="status-badge status-${staffEscape(order.order_status)}">${staffEscape(staffStatusLabels[order.order_status] || order.order_status)}</span>
+            <div class="staff-order-head-actions">
+                <span class="status-badge status-${staffEscape(order.order_status)}">${staffEscape(staffStatusLabels[order.order_status] || order.order_status)}</span>
+                <button type="button" class="staff-cancel-button" data-order-id="${Number(order.order_id)}" data-cancel-order aria-label="Cancel order #${Number(order.order_id)}">Cancel</button>
+            </div>
         </div>
         <div class="staff-order-details">
             <div><span>Customer</span><strong>${staffEscape(order.username)}</strong></div>
@@ -181,7 +241,15 @@ function staffToday() {
 }
 
 async function advanceStaffOrder(orderId, status) {
-    const buttons = document.querySelectorAll(`[data-order-id="${CSS.escape(orderId)}"][data-next-status]`);
+    await updateStaffOrder(orderId, status, 'data-next-status', 'Could not update the order.');
+}
+
+async function cancelStaffOrder(orderId) {
+    await updateStaffOrder(orderId, 'cancelled', 'data-cancel-order', 'Could not cancel the order.');
+}
+
+async function updateStaffOrder(orderId, status, actionAttribute, fallbackMessage) {
+    const buttons = document.querySelectorAll(`[data-order-id="${CSS.escape(orderId)}"][${actionAttribute}]`);
     buttons.forEach(button => { button.disabled = true; });
     try {
         const response = await rsmApi('staff_update_order.php', {
@@ -193,11 +261,11 @@ async function advanceStaffOrder(orderId, status) {
             window.location.href = 'Admin_login.html';
             return;
         }
-        if (!result.success) throw new Error(result.message || 'Could not update the order.');
+        if (!result.success) throw new Error(result.message || fallbackMessage);
         showStaffToast(result.message);
         await loadStaffOrders();
     } catch (error) {
-        document.getElementById('staffMessage').textContent = error.message || 'Could not update the order.';
+        document.getElementById('staffMessage').textContent = error.message || fallbackMessage;
         buttons.forEach(button => { button.disabled = false; });
         if (error.message && error.message.includes('changed')) await loadStaffOrders();
     }
