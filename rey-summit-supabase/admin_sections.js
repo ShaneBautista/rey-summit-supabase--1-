@@ -201,10 +201,17 @@ function normalizeAdminNavigation() {
         linksByPage.set('admin_gcash.html', link);
     }
 
+    const currentPage = location.pathname
+        .replace(/\/+$/, '')
+        .split('/')
+        .pop()
+        .replace(/\.html$/i, '')
+        .toLowerCase();
+
     expectedOrder.forEach(page => {
         const link = linksByPage.get(page);
         if (link) {
-            link.classList.toggle('active', location.pathname.endsWith(page));
+            link.classList.toggle('active', currentPage === page.replace(/\.html$/i, '').toLowerCase());
             nav.appendChild(link);
         }
     });
