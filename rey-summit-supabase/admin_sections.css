@@ -511,6 +511,179 @@ th:last-child {
     margin-top: 14px;
 }
 
+.overview-dashboard-panel {
+    padding: 24px;
+}
+
+.overview-dashboard-panel .panel-head {
+    margin-bottom: 12px;
+}
+
+.overview-dashboard-panel .panel-head h3 {
+    margin-bottom: 4px;
+}
+
+.overview-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 20px;
+}
+
+.overview-kpis .metric {
+    min-width: 0;
+    padding: 17px;
+}
+
+.overview-kpis .metric strong {
+    overflow-wrap: anywhere;
+}
+
+.overview-best-branch strong {
+    font-size: clamp(16px, 1.8vw, 22px);
+}
+
+.overview-chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.overview-chart-card {
+    min-width: 0;
+}
+
+.overview-stock-card {
+    grid-column: 1 / -1;
+}
+
+.overview-chart-card svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.branch-sales-chart,
+.daily-orders-chart {
+    min-height: 180px;
+}
+
+.branch-sales-value {
+    fill: var(--ink);
+    font: 600 11px 'DM Sans', sans-serif;
+}
+
+.branch-sales-summary {
+    margin: 0 0 3px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.order-trend-line {
+    stroke: var(--blue-deep);
+}
+
+.order-chart-point {
+    stroke: var(--blue-deep);
+}
+
+.stock-warning-legend {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 7px;
+    color: #a9372d;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.stock-warning-legend i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #c0392b;
+}
+
+.inventory-stock-scroll {
+    overflow-x: auto;
+}
+
+.inventory-stock-table {
+    min-width: 840px;
+    font-size: 12px;
+}
+
+.inventory-stock-table th,
+.inventory-stock-table td {
+    text-align: left;
+}
+
+.inventory-stock-table th:first-child {
+    min-width: 150px;
+}
+
+.inventory-stock-table tbody th {
+    width: 21%;
+    padding: 13px 10px;
+    border-top: 1px solid #edf1ee;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.inventory-stock-table td {
+    min-width: 150px;
+    padding: 11px 10px;
+}
+
+.stock-level {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-height: 20px;
+}
+
+.stock-level strong {
+    color: var(--ink);
+    font-size: 11px;
+}
+
+.stock-level.is-low strong {
+    color: #a9372d;
+}
+
+.stock-warning {
+    padding: 3px 6px;
+    border-radius: 99px;
+    background: #fff0ed;
+    color: #a9372d;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.stock-level-track {
+    height: 6px;
+    margin-top: 6px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: #edf1ee;
+}
+
+.stock-level-track i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--teal-dark);
+}
+
+.stock-level.is-low + .stock-level-track i {
+    background: #c0392b;
+}
+
 .analytics-card {
     min-height: 265px;
     padding: 18px 20px;
@@ -2377,6 +2550,22 @@ th:last-child {
 
     .analytics-grid {
         grid-template-columns: 1fr;
+    }
+
+    .overview-dashboard-panel {
+        padding: 16px;
+    }
+
+    .overview-chart-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .overview-stock-card {
+        grid-column: auto;
+    }
+
+    .overview-kpis .metric {
+        padding: 14px;
     }
 
     .analytics-card {

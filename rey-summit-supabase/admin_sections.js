@@ -698,6 +698,7 @@ function renderOverview(data) {
 }
 
 let overviewAnalyticsRequest = 0;
+const overviewLowStockThreshold = 10;
 
 function setupOverviewDateFilter() {
     const selection = setupAdminDateFilter('overviewDateFilter', loadOverviewAnalytics);
@@ -793,12 +794,202 @@ async function loadOverviewAnalytics(period, date) {
         document.getElementById('revenuePeriodNote').textContent = `${period === 'year' ? 'Monthly' : 'Daily'} sales · ${periodLabel}`;
         document.getElementById('orderStatusPeriodNote').textContent = periodLabel;
         document.getElementById('topProductsPeriodNote').textContent = `Units sold · ${periodLabel}`;
+        if (!data.kpis || !Array.isArray(data.branch_sales) ||
+            !Array.isArray(data.inventory_stock) || !Array.isArray(data.daily_orders)) {
+            throw new Error('Dashboard analytics are not installed in Supabase yet. Run the updated Database.sql, then reload this page.');
+        }
+        renderOverviewKpis(data.kpis || {});
+        renderBranchSalesChart(data.branch_sales || [], period);
+        renderInventoryStockChart(data.inventory_stock || []);
+        renderDailyOrderTrend(data.daily_orders || [], period, date);
+        document.querySelector('.overview-dashboard-panel > .panel-head .panel-note').textContent =
+            `Completed sales and customer order activity for the ${periodLabel}; inventory shows current stock across all branches.`;
+        document.getElementById('branchSalesPeriodNote').textContent = `Completed revenue · ${periodLabel} · all branches`;
+        document.getElementById('dailyOrdersPeriodNote').textContent = `Orders and counter sales by day · ${periodLabel}`;
         status.textContent = '';
     } catch (error) {
-        if (request === overviewAnalyticsRequest) status.textContent = error.message || 'Overview analytics are unavailable.';
+        if (request === overviewAnalyticsRequest) {
+            const message = error.message || 'Overview analytics are unavailable.';
+            status.textContent = message;
+            ['branchSalesChart', 'inventoryStockChart', 'dailyOrdersChart'].forEach(id => {
+                document.getElementById(id).innerHTML = `<p class="empty">${escapeAdmin(message)}</p>`;
+            });
+        }
     } finally {
         if (request === overviewAnalyticsRequest) apply.disabled = false;
     }
+}
+
+function renderOverviewKpis(kpis) {
+    document.getElementById('overviewTotalRevenue').textContent = adminMoney(kpis.total_revenue);
+    document.getElementById('overviewTotalOrders').textContent = Number(kpis.total_orders || 0).toLocaleString();
+    document.getElementById('overviewProductsSold').textContent = Number(kpis.products_sold || 0).toLocaleString();
+    document.getElementById('overviewLowStockProducts').textContent = Number(kpis.low_stock_products || 0).toLocaleString();
+    document.getElementById('overviewCompletedOrders').textContent = Number(kpis.completed_orders || 0).toLocaleString();
+    document.getElementById('overviewPendingPayments').textContent = Number(kpis.pending_payments || 0).toLocaleString();
+    document.getElementById('overviewBestBranch').textContent = kpis.best_performing_branch || 'No sales';
+    document.getElementById('overviewBestBranchRevenue').textContent =
+        Number(kpis.best_branch_revenue || 0) > 0 ? `${adminMoney(kpis.best_branch_revenue)} · all branches` : 'No completed sales in this period';
+}
+
+function renderBranchSalesChart(rows) {
+    const target = document.getElementById('branchSalesChart');
+    if (!rows.length) {
+        target.innerHTML = '<p class="empty">No branch sales are available for the selected period.</p>';
+        return;
+    }
+
+    const branches = rows.map(row => ({
+        name: String(row.name || ''),
+        revenue: Number(row.revenue || 0)
+    }));
+    const maxValue = Math.max(...branches.map(branch => branch.revenue), 0);
+    const minValue = Math.min(...branches.map(branch => branch.revenue));
+    const rawStep = maxValue > 0 ? maxValue / 3 : 1;
+    const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+    const normalizedStep = rawStep / magnitude;
+    const step = (normalizedStep <= 1 ? 1 : normalizedStep <= 2 ? 2 : normalizedStep <= 5 ? 5 : 10) * magnitude;
+    const axisMax = step * 3;
+    const width = 860;
+    const height = 330;
+    const left = 96;
+    const right = 18;
+    const top = 20;
+    const bottom = 54;
+    const chartWidth = width - left - right;
+    const chartHeight = height - top - bottom;
+    const colors = ['#087f78', '#1aa7c1', '#d98a10', '#5572d8'];
+    const gridLines = Array.from({ length: 4 }, (_, index) => {
+        const value = axisMax - (step * index);
+        const y = top + (chartHeight * index / 3);
+        return `<g><line class="chart-grid-line" x1="${left}" y1="${y}" x2="${width - right}" y2="${y}"></line><text class="chart-axis-label" x="${left - 10}" y="${y + 5}" text-anchor="end">${adminMoney(value)}</text></g>`;
+    }).join('');
+    const bars = branches.map((branch, index) => {
+        const groupWidth = chartWidth / branches.length;
+        const barWidth = Math.min(92, groupWidth * 0.58);
+        const center = left + (groupWidth * (index + 0.5));
+        const barHeight = chartHeight * branch.revenue / axisMax;
+        const y = top + chartHeight - barHeight;
+        return `<g>
+            <rect x="${center - barWidth / 2}" y="${y}" width="${barWidth}" height="${barHeight}" rx="5" fill="${colors[index % colors.length]}"><title>${escapeAdmin(branch.name)}: ${adminMoney(branch.revenue)}</title></rect>
+            <text class="branch-sales-value" x="${center}" y="${Math.max(top + 12, y - 9)}" text-anchor="middle">${adminMoney(branch.revenue)}</text>
+            <text class="chart-date-label" x="${center}" y="${height - 18}" text-anchor="middle">${escapeAdmin(branch.name)}</text>
+        </g>`;
+    }).join('');
+
+    const highestBranches = branches.filter(branch => branch.revenue === maxValue).map(branch => branch.name);
+    const lowestBranches = branches.filter(branch => branch.revenue === minValue).map(branch => branch.name);
+    const summary = maxValue > 0 ?
+        `Highest: ${highestBranches.map(escapeAdmin).join(', ')} · ${adminMoney(maxValue)}. Lowest: ${lowestBranches.map(escapeAdmin).join(', ')} · ${adminMoney(minValue)}.` :
+        'No completed sales in the selected period.';
+
+    target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="branchSalesSvgTitle branchSalesSvgDescription">
+        <title id="branchSalesSvgTitle">Completed sales by branch</title>
+        <desc id="branchSalesSvgDescription">${branches.map(branch => `${branch.name}: ${adminMoney(branch.revenue)}`).join('; ')}</desc>
+        ${gridLines}${bars}
+    </svg><p class="branch-sales-summary">${summary}</p>`;
+}
+
+function renderInventoryStockChart(products) {
+    const target = document.getElementById('inventoryStockChart');
+    if (!products.length) {
+        target.innerHTML = '<p class="empty">No active products are available for inventory comparison.</p>';
+        return;
+    }
+
+    const branches = Array.isArray(products[0].branches) ? products[0].branches : [];
+    if (!branches.length) {
+        target.innerHTML = '<p class="empty">Branch stock data is unavailable.</p>';
+        return;
+    }
+    const maxStock = Math.max(...products.flatMap(product =>
+        (Array.isArray(product.branches) ? product.branches : []).map(branch => Number(branch.stock_qty || 0))), 1);
+    const rows = products.map(product => {
+        const stocks = new Map((Array.isArray(product.branches) ? product.branches : [])
+            .map(branch => [branch.name, Number(branch.stock_qty || 0)]));
+        return `<tr>
+            <th scope="row">${escapeAdmin(product.product_name)}</th>
+            ${branches.map(branch => {
+                const quantity = stocks.get(branch.name) || 0;
+                const isLow = quantity <= overviewLowStockThreshold;
+                const percent = Math.round((quantity / maxStock) * 100);
+                return `<td>
+                    <div class="stock-level${isLow ? ' is-low' : ''}">
+                        <strong>${quantity.toLocaleString()} units</strong>
+                        ${isLow ? '<span class="stock-warning">Low stock</span>' : ''}
+                    </div>
+                    <div class="stock-level-track" role="img" aria-label="${escapeAdmin(product.product_name)} at ${escapeAdmin(branch.name)}: ${quantity.toLocaleString()} units; warning threshold ${overviewLowStockThreshold}">
+                        <i style="width:${percent}%"></i>
+                    </div>
+                </td>`;
+            }).join('')}
+        </tr>`;
+    }).join('');
+
+    target.innerHTML = `<div class="inventory-stock-scroll">
+        <table class="inventory-stock-table">
+            <thead><tr><th scope="col">Product</th>${branches.map(branch => `<th scope="col">${escapeAdmin(branch.name)}</th>`).join('')}</tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+    </div>`;
+}
+
+function renderDailyOrderTrend(rows, period, selectedDate) {
+    const target = document.getElementById('dailyOrdersChart');
+    const valuesByDate = new Map(rows.map(row => [String(row.sale_date), Number(row.order_count || 0)]));
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const count = period === 'day' ? 1 :
+        period === 'month' ? new Date(year, month, 0).getDate() :
+        new Date(year, 1, 29).getMonth() === 1 ? 366 : 365;
+    const buckets = Array.from({ length: count }, (_, index) => {
+        const date = period === 'year' ? new Date(year, 0, index + 1) :
+            period === 'month' ? new Date(year, month - 1, index + 1) :
+            new Date(year, month - 1, day);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        return {
+            key,
+            label: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+            value: valuesByDate.get(key) || 0
+        };
+    });
+    const maxValue = Math.max(...buckets.map(bucket => bucket.value), 0);
+    const rawStep = maxValue > 0 ? maxValue / 3 : 1;
+    const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+    const normalizedStep = rawStep / magnitude;
+    const step = (normalizedStep <= 1 ? 1 : normalizedStep <= 2 ? 2 : normalizedStep <= 5 ? 5 : 10) * magnitude;
+    const axisMax = step * 3;
+    const width = 900;
+    const height = 300;
+    const left = 48;
+    const right = 18;
+    const top = 18;
+    const bottom = 42;
+    const chartWidth = width - left - right;
+    const chartHeight = height - top - bottom;
+    const points = buckets.map((bucket, index) => ({
+        x: left + (buckets.length === 1 ? chartWidth / 2 : chartWidth * index / (buckets.length - 1)),
+        y: top + chartHeight * (1 - bucket.value / axisMax)
+    }));
+    const gridLines = Array.from({ length: 4 }, (_, index) => {
+        const value = axisMax - (step * index);
+        const y = top + (chartHeight * index / 3);
+        return `<g><line class="chart-grid-line" x1="${left}" y1="${y}" x2="${width - right}" y2="${y}"></line><text class="chart-axis-label" x="${left - 9}" y="${y + 5}" text-anchor="end">${Math.round(value).toLocaleString()}</text></g>`;
+    }).join('');
+    const linePoints = points.map(point => `${point.x},${point.y}`).join(' ');
+    const pointMarks = points.map((point, index) => `<circle class="chart-point order-chart-point" cx="${point.x}" cy="${point.y}" r="4"><title>${buckets[index].label}: ${buckets[index].value.toLocaleString()} orders</title></circle>`).join('');
+    const labelInterval = Math.ceil(buckets.length / 9);
+    const labels = points.map((point, index) => index % labelInterval === 0 || index === points.length - 1 ?
+        `<text class="chart-date-label" x="${point.x}" y="${height - 10}" text-anchor="middle">${escapeAdmin(buckets[index].label)}</text>` : '').join('');
+    const periodLabel = period === 'day' ? 'selected day' : period === 'month' ? 'selected month' : 'selected year';
+
+    target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="dailyOrdersSvgTitle dailyOrdersSvgDescription">
+        <title id="dailyOrdersSvgTitle">Customer orders by day for the ${periodLabel}</title>
+        <desc id="dailyOrdersSvgDescription">${buckets.map(bucket => `${bucket.label}: ${bucket.value.toLocaleString()} orders`).join('; ')}</desc>
+        ${gridLines}
+        <polyline class="revenue-line order-trend-line" points="${linePoints}"></polyline>
+        ${pointMarks}
+        ${labels}
+    </svg>`;
 }
 
 function renderDecisionSupport(data) {
@@ -809,7 +1000,7 @@ function renderDecisionSupport(data) {
     const restockProducts = products
         .filter(product => Number(product.restock_units || 0) > 0)
         .sort((first, second) => Number(second.restock_units) - Number(first.restock_units));
-    const lowStockProducts = products.filter(product => Number(product.stock_qty || 0) <= 10);
+    const lowStockProducts = products.filter(product => Number(product.stock_qty || 0) <= overviewLowStockThreshold);
     const risingDemandProducts = products
         .filter(product => {
             const recent = Number(product.recent_units || 0);
@@ -954,6 +1145,7 @@ function renderOrderStatusChart(rows, period) {
         ['preparing', 'Preparing', '#f2a532'],
         ['out_for_delivery', 'Out for delivery', '#168fc2'],
         ['completed', 'Delivered', '#5572d8'],
+        ['cancelled', 'Cancelled', '#c0392b'],
     ];
     const counts = new Map(rows.map(row => [row.order_status, Number(row.order_count || 0)]));
     const statuses = statusOrder.map(([key, label, color]) => ({

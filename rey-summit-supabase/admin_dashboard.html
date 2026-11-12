@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overview | Rey Summit</title>
-    <link rel="stylesheet" href="admin_sections.css?v=25">
+    <link rel="stylesheet" href="admin_sections.css?v=26">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-api.js"></script>
@@ -62,6 +62,87 @@
                     <button class="overview-date-apply" type="submit">Apply</button>
                     <span id="overviewFilterStatus" aria-live="polite"></span>
                 </form>
+            </section>
+            <section class="panel overview-dashboard-panel" aria-labelledby="overviewChartsTitle">
+                <div class="panel-head">
+                    <div>
+                        <h3 id="overviewChartsTitle">Dashboard</h3>
+                        <p class="panel-note">Sales and order activity for the selected date range, with current inventory across all branches.</p>
+                    </div>
+                </div>
+                <div class="grid overview-kpis" aria-label="Key performance indicators">
+                    <article class="metric">
+                        <span class="metric-label">Total Revenue</span>
+                        <strong id="overviewTotalRevenue">—</strong>
+                        <span>Completed sales</span>
+                    </article>
+                    <article class="metric">
+                        <span class="metric-label">Total Orders</span>
+                        <strong id="overviewTotalOrders">—</strong>
+                        <span>Orders and counter sales placed</span>
+                    </article>
+                    <article class="metric">
+                        <span class="metric-label">Products Sold</span>
+                        <strong id="overviewProductsSold">—</strong>
+                        <span>Units from completed sales</span>
+                    </article>
+                    <article class="metric">
+                        <span class="metric-label">Low Stock Products</span>
+                        <strong id="overviewLowStockProducts">—</strong>
+                        <span>10 units or fewer</span>
+                    </article>
+                    <article class="metric">
+                        <span class="metric-label">Completed Orders</span>
+                        <strong id="overviewCompletedOrders">—</strong>
+                        <span>Completed orders and sales</span>
+                    </article>
+                    <article class="metric">
+                        <span class="metric-label">Pending Payments</span>
+                        <strong id="overviewPendingPayments">—</strong>
+                        <span>Waiting for verification</span>
+                    </article>
+                    <article class="metric overview-best-branch">
+                        <span class="metric-label">Best Performing Branch</span>
+                        <strong id="overviewBestBranch">—</strong>
+                        <span id="overviewBestBranchRevenue">Highest completed revenue</span>
+                    </article>
+                </div>
+                <div class="overview-chart-grid">
+                    <section class="analytics-card overview-chart-card" aria-labelledby="branchSalesTitle">
+                        <div class="analytics-heading">
+                            <div>
+                                <h4 id="branchSalesTitle">Branch Sales Comparison</h4>
+                                <p id="branchSalesPeriodNote">Completed revenue · selected period · all branches</p>
+                            </div>
+                        </div>
+                        <div id="branchSalesChart" class="branch-sales-chart">
+                            <p class="empty">Loading branch sales...</p>
+                        </div>
+                    </section>
+                    <section class="analytics-card overview-chart-card" aria-labelledby="dailyOrdersTitle">
+                        <div class="analytics-heading">
+                            <div>
+                                <h4 id="dailyOrdersTitle">Daily Order Trends</h4>
+                                <p id="dailyOrdersPeriodNote">Orders and counter sales by day · selected period</p>
+                            </div>
+                        </div>
+                        <div id="dailyOrdersChart" class="daily-orders-chart">
+                            <p class="empty">Loading daily order trends...</p>
+                        </div>
+                    </section>
+                    <section class="analytics-card overview-chart-card overview-stock-card" aria-labelledby="inventoryStockTitle">
+                        <div class="analytics-heading">
+                            <div>
+                                <h4 id="inventoryStockTitle">Inventory Stock Levels</h4>
+                                <p>Available stock by active product and branch · low stock is 10 units or fewer</p>
+                            </div>
+                            <span class="stock-warning-legend"><i></i>Restock warning</span>
+                        </div>
+                        <div id="inventoryStockChart" class="inventory-stock-chart">
+                            <p class="empty">Loading inventory stock...</p>
+                        </div>
+                    </section>
+                </div>
             </section>
             <section class="panel analytics-panel" aria-labelledby="analyticsTitle">
                 <h3 id="analyticsTitle">Business analytics</h3>
@@ -158,6 +239,6 @@
             </section>
         </main>
     </div>
-    <script src="admin_sections.js?v=24"></script>
+    <script src="admin_sections.js?v=25"></script>
 </body>
 </html>
