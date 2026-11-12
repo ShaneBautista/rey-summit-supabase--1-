@@ -1452,6 +1452,9 @@ begin
        or p_status not in ('pending','confirmed','preparing','out_for_delivery','completed','cancelled') then
         return public.rsm_fail('Invalid order update.', 400);
     end if;
+    if p_status = 'completed' then
+        return public.rsm_fail('Only delivery staff can mark an order as delivered.', 403);
+    end if;
 
     select order_status, payment_method, payment_verification_status into o
       from public.orders where order_id = p_order_id and (v_b = 'all' or branch = v_b) for update;
@@ -1491,7 +1494,9 @@ begin
             from public.orders o
             join public.customers c on c.id = o.customer_id
             left join public.staff_accounts sa on sa.staff_id = o.delivered_by_staff_id
-            where o.order_status = 'completed' and (v_b = 'all' or coalesce(o.branch, c.branch) = v_b)
+            where o.order_status = 'completed'
+              and o.delivered_by_staff_id is not null
+              and (v_b = 'all' or coalesce(o.branch, c.branch) = v_b)
             union all
             select to_char(public.rsm_local(cs.sale_date), 'YYYY-MM-DD'),
                    to_char(public.rsm_local(cs.sale_date), 'YYYY-MM-DD HH24:MI:SS') || lpad(cs.sale_id::text, 12, '0'),
@@ -1571,6 +1576,7 @@ begin
             join public.customers c on c.id = o.customer_id
             left join public.staff_accounts sa on sa.staff_id = o.delivered_by_staff_id
            where o.order_status = 'completed'
+             and o.delivered_by_staff_id is not null
              and (v_b = 'all' or coalesce(o.branch, c.branch) = v_b)
              and public.rsm_local(o.order_date)::date between v_start and v_end
           union all

@@ -20,10 +20,6 @@ const deliveryNextSteps = {
         status: 'out_for_delivery',
         label: 'Out for delivery'
     },
-    out_for_delivery: {
-        status: 'completed',
-        label: 'Mark delivered'
-    },
 };
 const escapeAdmin = value => String(value ?? '').replace(/[&<>'"]/g, character => ({
     '&': '&amp;',
