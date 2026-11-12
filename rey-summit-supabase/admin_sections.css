@@ -1536,41 +1536,57 @@ th:last-child {
 
 .sales-table {
     width: 100%;
-    min-width: 900px;
+    min-width: 1100px;
     table-layout: fixed;
     font-size: 12px;
 }
 
 .sales-order-column {
-    width: 9%;
+    width: 8%;
 }
 
 .sales-type-column {
-    width: 10%;
+    width: 8%;
 }
 
 .sales-customer-column {
+    width: 13%;
+}
+
+.sales-product-column {
     width: 18%;
 }
 
+.sales-quantity-column {
+    width: 7%;
+}
+
 .sales-location-column {
-    width: 16%;
+    width: 12%;
 }
 
 .sales-payment-column {
-    width: 10%;
+    width: 8%;
 }
 
 .sales-delivered-column {
-    width: 16%;
-}
-
-.sales-total-column {
     width: 10%;
 }
 
+.sales-total-column {
+    width: 8%;
+}
+
 .sales-time-column {
-    width: 11%;
+    width: 8%;
+}
+
+.sales-items-cell span {
+    display: block;
+}
+
+.sales-quantity-cell span {
+    text-align: center;
 }
 
 .sales-table th {

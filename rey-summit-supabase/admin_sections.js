@@ -1151,6 +1151,8 @@ function downloadSalesCsv() {
         ['Time', order => order.order_time],
         ['Type', order => order.sale_type || 'Online'],
         ['Customer', order => order.customer_name || order.username],
+        ['Products', order => (order.items || []).map(item => item.product_name).join('; ')],
+        ['Quantity', order => (order.items || []).map(item => item.quantity).join('; ')],
         ['Branch', order => order.branch],
         ['Location', order => order.location],
         ['Payment', order => order.payment_method],
@@ -1305,16 +1307,23 @@ function renderSales(orders) {
             day: 'numeric',
         });
         const dailyTotal = dayOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
-        const rows = dayOrders.map(order => `<tr>
-            <td>${escapeAdmin(order.sale_number || `#${order.order_id}`)}</td>
-            <td>${escapeAdmin(order.sale_type || 'Online')}</td>
-            <td>${escapeAdmin(order.username)}</td>
-            <td>${escapeAdmin(order.location || '—')}</td>
-            <td>${escapeAdmin(order.payment_method)}</td>
-            <td>${escapeAdmin(order.delivered_by)}</td>
-            <td class="sales-amount">${adminMoney(order.total_amount)}</td>
-            <td><time>${escapeAdmin(order.order_time)}</time></td>
-        </tr>`).join('');
+        const rows = dayOrders.map(order => {
+            const items = Array.isArray(order.items) ? order.items : [];
+            const products = items.map(item => `<span>${escapeAdmin(item.product_name)}</span>`).join('');
+            const quantities = items.map(item => `<span>${Number(item.quantity)}</span>`).join('');
+            return `<tr>
+                <td>${escapeAdmin(order.sale_number || `#${order.order_id}`)}</td>
+                <td>${escapeAdmin(order.sale_type || 'Online')}</td>
+                <td>${escapeAdmin(order.username)}</td>
+                <td class="sales-items-cell">${products || '—'}</td>
+                <td class="sales-items-cell sales-quantity-cell">${quantities || '—'}</td>
+                <td>${escapeAdmin(order.location || '—')}</td>
+                <td>${escapeAdmin(order.payment_method)}</td>
+                <td>${escapeAdmin(order.delivered_by)}</td>
+                <td class="sales-amount">${adminMoney(order.total_amount)}</td>
+                <td><time>${escapeAdmin(order.order_time)}</time></td>
+            </tr>`;
+        }).join('');
 
         return `<section class="sales-day-group" aria-label="Sales for ${escapeAdmin(formattedDate)}">
             <div class="sales-day-heading"><h4>${escapeAdmin(formattedDate)}</h4><span aria-hidden="true">·</span><strong>Total: ${adminMoney(dailyTotal)}</strong></div>
@@ -1324,13 +1333,15 @@ function renderSales(orders) {
                         <col class="sales-order-column">
                         <col class="sales-type-column">
                         <col class="sales-customer-column">
+                        <col class="sales-product-column">
+                        <col class="sales-quantity-column">
                         <col class="sales-location-column">
                         <col class="sales-payment-column">
                         <col class="sales-delivered-column">
                         <col class="sales-total-column">
                         <col class="sales-time-column">
                     </colgroup>
-                    <thead><tr><th>Order #</th><th>Type</th><th>Customer</th><th>Location</th><th>Payment</th><th>Delivered By</th><th>Total</th><th>Time</th></tr></thead>
+                    <thead><tr><th>Order #</th><th>Type</th><th>Customer</th><th>Product</th><th>Quantity</th><th>Location</th><th>Payment</th><th>Delivered By</th><th>Total</th><th>Time</th></tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
             </div>

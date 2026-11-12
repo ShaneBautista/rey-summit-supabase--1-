@@ -1489,6 +1489,13 @@ begin
                        'delivered_by', coalesce(nullif(sa.full_name, ''), 'N/A'),
                        'sale_number', '#' || o.order_id, 'sale_type', 'Online',
                        'payment_method', case when o.payment_method = 'gcash' then 'GCash' else 'Cash' end,
+                       'items', coalesce((
+                           select jsonb_agg(jsonb_build_object('product_name', p.product_name, 'quantity', oi.quantity)
+                                            order by oi.order_item_id)
+                           from public.order_items oi
+                           join public.products p on p.product_id = oi.product_id
+                           where oi.order_id = o.order_id
+                       ), '[]'::jsonb),
                        'location', coalesce(nullif(o.delivery_address, ''),
                                             nullif(coalesce(o.branch, c.branch), ''), '—')) as j
             from public.orders o
@@ -1505,6 +1512,13 @@ begin
                        'sale_type', case when cs.sale_type = 'walk_in' then 'Walk-in' else 'Call' end,
                        'customer_name', cs.customer_name, 'username', cs.customer_name,
                        'location', cs.location,
+                       'items', coalesce((
+                           select jsonb_agg(jsonb_build_object('product_name', p.product_name, 'quantity', csi.quantity)
+                                            order by csi.sale_item_id)
+                           from public.counter_sale_items csi
+                           join public.products p on p.product_id = csi.product_id
+                           where csi.sale_id = cs.sale_id
+                       ), '[]'::jsonb),
                        'payment_method', case when cs.payment_method = 'gcash' then 'GCash' else 'Cash' end,
                        'branch', cs.branch, 'delivered_by', cs.delivered_by,
                        'total_amount', cs.total_amount,
@@ -1570,6 +1584,13 @@ begin
                      'delivered_by', coalesce(nullif(sa.full_name, ''), 'N/A'),
                      'sale_number', '#' || o.order_id, 'sale_type', 'Online',
                      'payment_method', case when o.payment_method = 'gcash' then 'GCash' else 'Cash' end,
+                     'items', coalesce((
+                         select jsonb_agg(jsonb_build_object('product_name', p.product_name, 'quantity', oi.quantity)
+                                          order by oi.order_item_id)
+                         from public.order_items oi
+                         join public.products p on p.product_id = oi.product_id
+                         where oi.order_id = o.order_id
+                     ), '[]'::jsonb),
                      'location', coalesce(nullif(o.delivery_address, ''),
                                           nullif(coalesce(o.branch, c.branch), ''), '—')) as j
             from public.orders o
@@ -1587,6 +1608,13 @@ begin
                      'sale_type', case when cs.sale_type = 'walk_in' then 'Walk-in' else 'Call' end,
                      'customer_name', cs.customer_name, 'username', cs.customer_name,
                      'location', cs.location,
+                     'items', coalesce((
+                         select jsonb_agg(jsonb_build_object('product_name', p.product_name, 'quantity', csi.quantity)
+                                          order by csi.sale_item_id)
+                         from public.counter_sale_items csi
+                         join public.products p on p.product_id = csi.product_id
+                         where csi.sale_id = cs.sale_id
+                     ), '[]'::jsonb),
                      'payment_method', case when cs.payment_method = 'gcash' then 'GCash' else 'Cash' end,
                      'branch', cs.branch, 'delivered_by', cs.delivered_by,
                      'total_amount', cs.total_amount,
