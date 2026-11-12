@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const list = document.getElementById('historyList');
 
     try {
+        const accountResponse = await rsmApi('customer_account.php');
+        const accountData = await accountResponse.json();
+        if (!accountResponse.ok || !accountData.success) {
+            throw new Error(accountData.message || 'Could not load your account details.');
+        }
+        document.getElementById('customerUsername').textContent = accountData.account.username || '';
+
         const response = await rsmApi('get_my_orders.php');
         const data = await response.json();
 
@@ -53,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         `).join('');
     } catch (error) {
         message.className = 'error-state';
-        message.textContent = 'Could not load your order history. Please try again.';
+        message.textContent = error.message || 'Could not load your order history. Please try again.';
     }
 });
 

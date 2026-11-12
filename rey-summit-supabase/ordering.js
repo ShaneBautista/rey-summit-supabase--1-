@@ -52,6 +52,9 @@ async function loadAccountDetails() {
             throw new Error(response.status === 401 ? 'Please log in to use your saved delivery details.' : (data.message || 'Could not load account details.'));
         }
 
+        const username = document.getElementById('customerUsername');
+        if (username) username.textContent = data.account.username || '';
+
         address.value = data.account.address || '';
         phone.value = data.account.phone || '';
         if (!String(data.account.branch || '').trim()) {
@@ -109,14 +112,25 @@ function buildCategoryChips(products) {
         btn.type = 'button';
         btn.textContent = cat;
         btn.dataset.cat = cat;
+        btn.setAttribute('aria-pressed', 'false');
         chipsBox.appendChild(btn);
     });
 
     chipsBox.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         if (!btn) return;
-        chipsBox.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        const wasActive = btn.classList.contains('active');
+        chipsBox.querySelectorAll('button').forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-pressed', 'false');
+        });
+        if (wasActive) {
+            renderGrid(PRODUCTS);
+            return;
+        }
+
         btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
 
         const cat = btn.dataset.cat;
         const filtered = PRODUCTS.filter(p => p.category_name === cat);
@@ -133,6 +147,7 @@ function renderGrid(products) {
     }
 
     grid.innerHTML = products.map(p => {
+        const productImage = catalogProductImage(p);
         const stockQty = Number(p.stock_qty) || 0;
         const inStock = stockQty > 0;
         const lowStock = inStock && stockQty <= 5;
@@ -147,7 +162,9 @@ function renderGrid(products) {
                 ${p.category_name && p.category_name.toLowerCase() !== 'general'
                     ? `<span class="thumb-badge">${escapeHtml(p.category_name)}</span>`
                     : ''}
-                <span class="thumb-icon">🛒</span>
+                ${productImage
+                    ? `<img class="product-image" src="${escapeHtml(productImage)}" alt="${escapeHtml(p.product_name)}">`
+                    : '<span class="thumb-icon">🛒</span>'}
             </div>
             <div class="product-body">
                 <span class="p-name">${escapeHtml(p.product_name)}</span>
@@ -167,6 +184,15 @@ function renderGrid(products) {
             </div>
         </div>`;
     }).join('');
+
+    grid.querySelectorAll('.product-image').forEach(image => {
+        image.addEventListener('error', () => {
+            const fallback = document.createElement('span');
+            fallback.className = 'thumb-icon';
+            fallback.textContent = '🛒';
+            image.replaceWith(fallback);
+        }, { once: true });
+    });
 
     grid.querySelectorAll('.product-card').forEach(card => {
         const id = Number(card.dataset.id);
@@ -211,6 +237,24 @@ function renderGrid(products) {
             updateQuantityControls(card);
         });
     });
+}
+
+function catalogProductImage(product) {
+    const details = `${product.product_name || ''} ${product.description || ''} ${product.category_name || ''}`.toLowerCase();
+    const isCrushed = /crush/.test(details);
+    const weight = details.match(/\b(1|2|5|25|50)\s*(?:kg|kgs|kilo(?:gram)?s?)\b/)?.[1]
+        || (/\bhalf[\s-]*sack\b/.test(details) ? '25' : '')
+        || (/\bfull[\s-]*sack\b/.test(details) ? '50' : '');
+
+    const imageByProduct = {
+        '1': 'images/ice-tube-1kg.jpg',
+        '2': 'images/ice-tube-2kg.jpg',
+        '5': 'images/ice-tube-5kg.jpg',
+        '25': isCrushed ? 'images/crushed-ice-half-sack-25kg.jpg' : 'images/ice-tube-half-sack-25kg.jpg',
+        '50': isCrushed ? 'images/crushed-ice-full-sack-50kg.jpg' : 'images/ice-tube-full-sack-50kg.jpg',
+    };
+
+    return imageByProduct[weight] || product.image_path || '';
 }
 
 function updateQuantityControls(card) {

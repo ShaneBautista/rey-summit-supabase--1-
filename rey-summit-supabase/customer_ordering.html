@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shop — Rey Summit</title>
-<link rel="stylesheet" href="shop.css?v=12">
+<link rel="stylesheet" href="shop.css?v=13">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-api.js"></script>
@@ -64,7 +64,7 @@
         <!-- Center Content -->
         <section class="center-content">
             <p class="eyebrow">Catalog</p>
-            <h1>What would you like to order?</h1>
+            <h1>Hi, welcome <span id="customerUsername"></span>! What would you like to order?</h1>
 
             <div class="category-chips" id="categoryChips"></div>
 
@@ -114,7 +114,7 @@
                 <label for="paymentMethod">Payment method</label>
                 <select id="paymentMethod" name="payment_method" required>
                     <option value="" disabled selected>Select payment method</option>
-                    <option value="cash">Cash</option>
+                    <option value="cash">Cash on Delivery</option>
                     <option value="gcash">GCash</option>
                 </select>
 
@@ -172,6 +172,6 @@
         </a>
     </nav>
 
-    <script src="ordering.js?v=19"></script>
+    <script src="ordering.js?v=22"></script>
 </body>
 </html>

@@ -600,7 +600,7 @@ function drawInventory(filter = document.getElementById('inventoryFilter').value
         const active = Number(product.is_active) === 1;
         return active && (normalizedFilter === 'all' || (normalizedFilter === 'low' && Number(product.stock_qty) <= 10) || (normalizedFilter === 'healthy' && Number(product.stock_qty) > 10));
     });
-    document.getElementById('inventoryTable').innerHTML = rows.length ? `<div class="table-scroll"><table><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(product => `<tr class="${Number(product.stock_qty) <= 10 && Number(product.is_active) ? 'stock-low' : ''}"><td><strong>${escapeAdmin(product.product_name)}</strong>${product.description ? `<small class="product-description">${escapeAdmin(product.description)}</small>` : ''}</td><td>${adminMoney(product.price)}</td><td class="stock-count">${product.stock_qty}</td><td>${Number(product.stock_qty) <= 10 ? 'Restock soon' : 'Healthy'}</td><td class="product-actions">${inventoryBranch === 'all' ? '—' : `<button type="button" class="text-button" data-edit="${product.product_id}">Edit</button><button type="button" class="text-button danger" data-delete="${product.product_id}">Delete</button>`}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No products match this filter.</p>';
+    document.getElementById('inventoryTable').innerHTML = rows.length ? `<div class="table-scroll"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(product => `<tr class="${Number(product.stock_qty) <= 10 && Number(product.is_active) ? 'stock-low' : ''}"><td><strong>${escapeAdmin(product.product_name)}</strong>${product.description ? `<small class="product-description">${escapeAdmin(product.description)}</small>` : ''}</td><td>${escapeAdmin(product.category_name || 'Uncategorised')}</td><td>${adminMoney(product.price)}</td><td class="stock-count">${product.stock_qty}</td><td>${Number(product.stock_qty) <= 10 ? 'Restock soon' : 'Healthy'}</td><td class="product-actions">${inventoryBranch === 'all' ? '—' : `<button type="button" class="text-button" data-edit="${product.product_id}">Edit</button><button type="button" class="text-button danger" data-delete="${product.product_id}">Delete</button>`}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No products match this filter.</p>';
     document.querySelectorAll('[data-edit]').forEach(button => button.addEventListener('click', () => editProduct(button.dataset.edit)));
     document.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', () => deleteProduct(button.dataset.delete)));
 }
@@ -610,7 +610,7 @@ function editProduct(id) {
     const product = inventoryProducts.find(item => String(item.product_id) === String(id));
     if (!product) return;
     const form = document.getElementById('productForm');
-    for (const field of ['product_id', 'product_name', 'price', 'stock_qty', 'description']) form.elements[field].value = product[field] ?? '';
+    for (const field of ['product_id', 'product_name', 'category_name', 'price', 'stock_qty', 'description']) form.elements[field].value = product[field] ?? '';
     document.getElementById('productFormTitle').textContent = 'Update product';
     document.getElementById('productSubmit').textContent = 'Save changes';
     document.getElementById('cancelEdit').hidden = false;

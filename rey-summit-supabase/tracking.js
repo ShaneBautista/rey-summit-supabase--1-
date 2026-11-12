@@ -17,6 +17,8 @@ const STAGES = [
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
+    loadCustomerUsername();
+
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get('order_id');
 
@@ -30,6 +32,19 @@ document.addEventListener('DOMContentLoaded', () => {
         loadMyOrders();
     }
 });
+
+async function loadCustomerUsername() {
+    try {
+        const response = await rsmApi('customer_account.php');
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Could not load your account details.');
+        }
+        document.getElementById('customerUsername').textContent = data.account.username || '';
+    } catch (error) {
+        console.error('Could not load the customer username for order tracking.', error);
+    }
+}
 
 async function loadMyOrders() {
     const box = document.getElementById('ordersListBox');

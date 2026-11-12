@@ -1703,11 +1703,14 @@ begin
         select jsonb_agg(jsonb_build_object(
                    'product_id', q.product_id, 'product_name', q.product_name,
                    'description', q.description, 'price', q.price,
-                   'stock_qty', q.stock, 'is_active', case when q.is_active then 1 else 0 end)
+                   'stock_qty', q.stock, 'is_active', case when q.is_active then 1 else 0 end,
+                   'category_name', q.category_name)
                order by q.is_active desc, q.product_name)
         from (select p.product_id, p.product_name, p.description, p.price, p.is_active,
+                     c.category_name,
                      coalesce(sum(pbs.stock_qty), 0) as stock
                 from public.products p
+                left join public.product_categories c on c.category_id = p.category_id
                 left join public.product_branch_stock pbs
                   on pbs.product_id = p.product_id and (v_b = 'all' or pbs.branch = v_b)
                where p.is_active
@@ -1715,11 +1718,11 @@ begin
                      select 1 from public.product_branch_stock branch_stock
                       where branch_stock.product_id = p.product_id and branch_stock.branch = v_b
                  ))
-               group by p.product_id, p.product_name, p.description, p.price, p.is_active) q
+               group by p.product_id, p.product_name, p.description, p.price, p.is_active, c.category_name) q
     ), '[]'::jsonb));
 end $$;
 
--- p_input = { action: create | update | delete, product_id, product_name, description, price, stock_qty }
+-- p_input = { action: create | update | delete, product_id, product_name, category_name, description, price, stock_qty }
 create or replace function public.rsm_admin_product_action(p_input jsonb, p_branch text default 'all')
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
@@ -1728,6 +1731,8 @@ declare
     v_id int := case when coalesce(p_input->>'product_id', '') ~ '^[0-9]{1,9}$'
                      then (p_input->>'product_id')::int end;
     v_name text := trim(coalesce(p_input->>'product_name', ''));
+    v_category_name text := trim(coalesce(p_input->>'category_name', ''));
+    v_category_id int;
     v_desc text := trim(coalesce(p_input->>'description', ''));
     v_price numeric;
     v_stock int;
@@ -1752,6 +1757,15 @@ begin
     end if;
     if v_name = '' or char_length(v_name) > 100 then
         return public.rsm_fail('Product name is required and must be at most 100 characters.', 422);
+    end if;
+    if v_category_name = '' or char_length(v_category_name) > 50 then
+        return public.rsm_fail('Choose a product category.', 422);
+    end if;
+    select category_id into v_category_id
+      from public.product_categories
+     where category_name = v_category_name;
+    if v_category_id is null then
+        return public.rsm_fail('Choose a valid product category.', 422);
     end if;
 
     if coalesce(p_input->>'price', '') ~ '^[0-9]{1,8}(\.[0-9]{1,2})?$' then
@@ -1788,17 +1802,17 @@ begin
             ) then
                 return public.rsm_fail('A product with this name already exists in this branch.', 409);
             end if;
-            if not v_existing_active then
-                update public.products
-                   set product_name = v_name, description = v_desc, price = v_price, is_active = true
-                 where product_id = v_id;
-            end if;
+            update public.products
+               set product_name = v_name, category_id = v_category_id,
+                   description = v_desc, price = v_price, is_active = true
+             where product_id = v_id;
         else
-            insert into public.products (product_name, description, price, stock_qty)
-            values (v_name, v_desc, v_price, 0) returning product_id into v_id;
+            insert into public.products (category_id, product_name, description, price, stock_qty)
+            values (v_category_id, v_name, v_desc, v_price, 0) returning product_id into v_id;
         end if;
     else
-        update public.products set product_name = v_name, description = v_desc, price = v_price
+        update public.products
+           set category_id = v_category_id, product_name = v_name, description = v_desc, price = v_price
          where product_id = v_id and is_active;
         if not found then return public.rsm_fail('Product not found or archived.', 404); end if;
     end if;
@@ -1938,6 +1952,19 @@ notify pgrst, 'reload schema';
 
 insert into public.product_categories (category_name) values ('General')
 on conflict do nothing;
+
+insert into public.product_categories (category_name)
+values ('Crushed Ice'), ('Ice Tube')
+on conflict do nothing;
+
+update public.products p
+   set category_id = c.category_id
+  from public.product_categories c
+ where c.category_name = case
+        when lower(p.product_name) like '%crush%' then 'Crushed Ice'
+        when lower(p.product_name) like '%tube%' then 'Ice Tube'
+       end
+   and p.category_id is distinct from c.category_id;
 
 -- Sample products (delete/edit once you have real menu items)
 insert into public.products (category_id, product_name, description, price, stock_qty)

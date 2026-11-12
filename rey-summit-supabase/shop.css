@@ -157,11 +157,18 @@ body.shop-body{
 
 .product-thumb{
     position:relative;
-    height:130px;
+    height:180px;
     background:
         linear-gradient(rgba(216, 243, 238, .28), rgba(205, 234, 245, .28)),
         url('images/ice-cubes-background-ice-cube-texture-ice-wallpaper-it-makes-me-feel-fresh-and-feel-good-in-the-summer-ice-photo.jpg') center / cover;
     display:flex; align-items:center; justify-content:center;
+}
+.product-thumb .product-image{
+    width:100%;
+    height:100%;
+    padding:6px;
+    object-fit:contain;
+    background:#fff;
 }
 .product-thumb .thumb-icon{
     font-size:2.4rem;
