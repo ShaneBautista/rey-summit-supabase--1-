@@ -1491,7 +1491,7 @@ begin
             from public.orders o
             join public.customers c on c.id = o.customer_id
             left join public.staff_accounts sa on sa.staff_id = o.delivered_by_staff_id
-            where o.order_status <> 'cancelled' and (v_b = 'all' or coalesce(o.branch, c.branch) = v_b)
+            where o.order_status = 'completed' and (v_b = 'all' or coalesce(o.branch, c.branch) = v_b)
             union all
             select to_char(public.rsm_local(cs.sale_date), 'YYYY-MM-DD'),
                    to_char(public.rsm_local(cs.sale_date), 'YYYY-MM-DD HH24:MI:SS') || lpad(cs.sale_id::text, 12, '0'),
@@ -1570,7 +1570,7 @@ begin
             from public.orders o
             join public.customers c on c.id = o.customer_id
             left join public.staff_accounts sa on sa.staff_id = o.delivered_by_staff_id
-           where o.order_status <> 'cancelled'
+           where o.order_status = 'completed'
              and (v_b = 'all' or coalesce(o.branch, c.branch) = v_b)
              and public.rsm_local(o.order_date)::date between v_start and v_end
           union all
