@@ -323,6 +323,13 @@
             if (!res.ok) return res;
             return respond(addForecast(await res.json()));
         },
+        'admin_forecast_data.php': (o, q) => {
+            const branch = q.get('branch') || 'all';
+            const days = Number(q.get('days') || 90);
+            if (branch !== 'all' && !BRANCHES.includes(branch)) return fail('Choose a valid branch.', 422);
+            if (![28, 60, 90].includes(days)) return fail('Choose a 28, 60, or 90-day history range.', 422);
+            return rpc('rsm_admin_forecast_data', { p_branch: branch, p_days: days });
+        },
         'admin_overview_analytics.php': (o, q) => rpc('rsm_admin_overview_analytics', {
             p_branch: adminBranch(),
             p_period: q.get('period'),

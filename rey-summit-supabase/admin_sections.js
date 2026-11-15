@@ -256,7 +256,7 @@ wireAdminLogoutConfirmation();
             renderOverview(data);
         }
         if (page === 'inventory') await loadInventory();
-        if (page === 'forecasting') renderForecast(data);
+        if (page === 'forecasting') await setupForecastDashboard(data.branch || 'all');
         if (page === 'sales') await loadSales();
         if (page === 'delivery') await setupDeliveryQueue();
         if (page === 'performance') renderPerformance(data);
@@ -603,9 +603,8 @@ function drawInventory(filter = document.getElementById('inventoryFilter').value
         const active = Number(product.is_active) === 1;
         return active && (normalizedFilter === 'all' || (normalizedFilter === 'low' && Number(product.stock_qty) <= 10) || (normalizedFilter === 'healthy' && Number(product.stock_qty) > 10));
     });
-    document.getElementById('inventoryTable').innerHTML = rows.length ? `<div class="table-scroll"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(product => `<tr class="${Number(product.stock_qty) <= 10 && Number(product.is_active) ? 'stock-low' : ''}"><td><strong>${escapeAdmin(product.product_name)}</strong>${product.description ? `<small class="product-description">${escapeAdmin(product.description)}</small>` : ''}</td><td>${escapeAdmin(product.category_name || 'Uncategorised')}</td><td>${adminMoney(product.price)}</td><td class="stock-count">${product.stock_qty}</td><td>${Number(product.stock_qty) <= 10 ? 'Restock soon' : 'Healthy'}</td><td class="product-actions">${inventoryBranch === 'all' ? '—' : `<button type="button" class="text-button" data-edit="${product.product_id}">Edit</button><button type="button" class="text-button danger" data-delete="${product.product_id}">Delete</button>`}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No products match this filter.</p>';
+    document.getElementById('inventoryTable').innerHTML = rows.length ? `<div class="table-scroll"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(product => `<tr class="${Number(product.stock_qty) <= 10 && Number(product.is_active) ? 'stock-low' : ''}"><td><strong>${escapeAdmin(product.product_name)}</strong>${product.description ? `<small class="product-description">${escapeAdmin(product.description)}</small>` : ''}</td><td>${escapeAdmin(product.category_name || 'Uncategorised')}</td><td>${adminMoney(product.price)}</td><td class="stock-count">${product.stock_qty}</td><td>${Number(product.stock_qty) <= 10 ? 'Restock soon' : 'Healthy'}</td><td class="product-actions">${inventoryBranch === 'all' ? '—' : `<button type="button" class="text-button" data-edit="${product.product_id}">Edit</button>`}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No products match this filter.</p>';
     document.querySelectorAll('[data-edit]').forEach(button => button.addEventListener('click', () => editProduct(button.dataset.edit)));
-    document.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', () => deleteProduct(button.dataset.delete)));
 }
 
 function editProduct(id) {
@@ -660,34 +659,6 @@ async function saveProduct(event) {
         showToast(result.message);
     } catch (error) {
         document.getElementById('formMessage').textContent = error.message || 'Could not save product.';
-    }
-}
-
-async function deleteProduct(id) {
-    if (inventoryBranch === 'all') return;
-    const product = inventoryProducts.find(item => String(item.product_id) === String(id));
-    if (!product || !window.confirm(`Remove “${product.product_name}” from ${inventoryBranch}'s catalogue?`)) return;
-    try {
-        const response = await rsmApi('admin_products.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'delete',
-                product_id: id
-            })
-        });
-        const result = await response.json();
-        if (response.status === 401) {
-            window.location.href = 'Admin_login.html';
-            return;
-        }
-        if (!result.success) throw new Error(result.message);
-        await loadInventory();
-        showToast(result.message);
-    } catch (error) {
-        document.getElementById('pageMessage').textContent = error.message || 'Could not delete product.';
     }
 }
 
@@ -1122,7 +1093,7 @@ function renderRevenueChart(rows, period, selectedDate) {
     }).join('');
     const linePoints = points.map(point => `${point.x},${point.y}`).join(' ');
     const pointMarks = points.map((point, index) => `<circle class="chart-point" cx="${point.x}" cy="${point.y}" r="5.5"><title>${buckets[index].label}: ${adminMoney(buckets[index].value)}</title></circle>`).join('');
-    const labelInterval = Math.ceil(buckets.length / 8);
+    const labelInterval = period === 'year' ? 1 : Math.ceil(buckets.length / 8);
     const dateLabels = points.map((point, index) => index % labelInterval === 0 || index === points.length - 1 ?
         `<text class="chart-date-label" x="${point.x}" y="${height - 9}" text-anchor="middle">${escapeAdmin(buckets[index].label)}</text>` : '').join('');
     const periodLabel = period === 'day' ? 'selected day' : period === 'month' ? 'selected month' : 'selected year';
@@ -1189,37 +1160,491 @@ function renderTopProducts(products, period) {
     }).join('');
 }
 
-function renderForecast(data) {
-    const forecastProducts = data.forecast_products || [];
-    const forecastUnits = forecastProducts.reduce((total, product) => total + Number(product.forecast_units || 0), 0);
-    const forecastValue = forecastProducts.reduce((total, product) => total + (Number(product.forecast_units || 0) * Number(product.price || 0)), 0);
-    const restockProducts = forecastProducts.filter(product => Number(product.restock_units || 0) > 0);
-    const maxForecast = forecastProducts.length ? Math.max(...forecastProducts.map(product => Number(product.forecast_units || 0)), 1) : 1;
-    document.querySelector('#forecastRevenue').previousElementSibling.textContent = 'Projected 7-day demand value';
-    document.querySelector('#forecastRevenue').nextElementSibling.textContent = 'Based on historical sales trend';
-    document.querySelector('#forecastOrders').previousElementSibling.textContent = 'Projected 7-day units';
-    document.querySelector('#forecastOrders').nextElementSibling.textContent = 'Linear regression estimate';
-    document.getElementById('forecastRevenue').textContent = adminMoney(forecastValue);
-    document.getElementById('forecastOrders').textContent = forecastUnits.toLocaleString();
-    const accuracy = data.forecast_accuracy || {};
-    const hasAccuracy = Number.isFinite(Number(accuracy.mae)) && Number(accuracy.observations) > 0;
-    const evaluatedProducts = Number(accuracy.evaluated_products);
-    document.getElementById('forecastMae').textContent = hasAccuracy ? `${Number(accuracy.mae).toFixed(2)} units` : 'N/A';
-    document.getElementById('forecastMaeNote').textContent = hasAccuracy ?
-        `Avg units error / product-day · ${evaluatedProducts} product${evaluatedProducts === 1 ? '' : 's'}` :
-        'No sales available for backtesting';
-    document.querySelector('#categoryBars').previousElementSibling.textContent = 'Product demand forecast';
-    const hasForecastHistory = forecastProducts.some(product => Number(product.historical_units || 0) > 0);
-    document.getElementById('categoryBars').innerHTML = !forecastProducts.length ?
-        '<p class="empty">No active products are available for forecasting.</p>' :
-        !hasForecastHistory ?
-        '<p class="empty">No product sales were recorded in the 28-day forecast period, so a reliable demand forecast is not available.</p>' :
-        forecastProducts.slice().sort((first, second) => Number(second.forecast_units || 0) - Number(first.forecast_units || 0)).slice(0, 8).map(product => `<div class="bar-row"><span>${escapeAdmin(product.product_name)}</span><div class="bar"><i style="width:${Math.round((Number(product.forecast_units || 0) / maxForecast) * 100)}%"></i></div><strong>${Number(product.forecast_units || 0)} units${Number(product.restock_units || 0) ? ` · <span class="stock-count">Review restock of ${Number(product.restock_units)}</span>` : ''}</strong></div>`).join('');
-    document.getElementById('forecastInsight').innerHTML = !hasForecastHistory ?
-        '<strong>Forecast limits:</strong> No product sales were recorded in the 28-day forecast period, so a reliable demand estimate is not available. Review sales history; the Admin/Owner makes the final stock decision.' :
-        restockProducts.length ?
-        `<strong>Decision cue:</strong> ${restockProducts.length} product${restockProducts.length === 1 ? '' : 's'} may need a stock review for the next 7 days. The estimate uses 28 days of daily historical sales and linear regression, not an external AI service. Use it as a guide; the Admin/Owner decides whether to restock.` :
-        '<strong>Demand signal:</strong> current stock appears sufficient for the projected next 7 days. The estimate uses 28 days of daily historical sales and linear regression, not an external AI service. Use it as a guide; the Admin/Owner decides whether to restock.';
+async function setupForecastDashboard(initialBranch) {
+    const branchFilter = document.getElementById('forecastBranchFilter');
+    const historyFilter = document.getElementById('forecastHistoryFilter');
+    const horizonFilter = document.getElementById('forecastHorizonFilter');
+    const productFilter = document.getElementById('forecastProductFilter');
+    const status = document.getElementById('forecastLoadStatus');
+    const message = document.getElementById('pageMessage');
+    let responseData = null;
+    let requestId = 0;
+
+    if (!window.rsmSalesForecast) throw new Error('The forecasting model could not be loaded.');
+    branchFilter.value = initialBranch;
+
+    const render = () => {
+        if (!responseData) return;
+        const horizon = Number(horizonFilter.value);
+        const days = Number(historyFilter.value);
+        const dashboard = window.rsmSalesForecast.createDashboardForecast(responseData, days, horizon);
+        updateForecastProductFilter(dashboard.products, productFilter);
+        renderForecastDashboard(dashboard, {
+            branch: branchFilter.value,
+            horizon,
+            days,
+            productId: productFilter.value,
+            generatedAt: new Date(),
+        });
+    };
+
+    const fetchData = async () => {
+        const thisRequest = ++requestId;
+        const days = Number(historyFilter.value);
+        const branch = branchFilter.value;
+        responseData = null;
+        status.textContent = 'Loading verified sales history…';
+        status.classList.add('is-loading');
+        message.textContent = '';
+        setForecastDashboardLoading();
+        try {
+            const query = new URLSearchParams({ branch, days: String(days) });
+            const response = await rsmApi(`admin_forecast_data.php?${query.toString()}`);
+            const data = await response.json();
+            if (response.status === 401) {
+                window.location.href = 'Admin_login.html';
+                return;
+            }
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Forecast sales data is unavailable.');
+            }
+            if (thisRequest !== requestId) return;
+            responseData = data;
+            render();
+            status.textContent = `${data.history_days} days of actual sales · Data through ${data.as_of}`;
+            status.classList.remove('is-loading');
+        } catch (error) {
+            if (thisRequest !== requestId) return;
+            status.textContent = 'Forecast data unavailable';
+            status.classList.remove('is-loading');
+            message.textContent = `${error.message || 'Could not load forecast data.'} To enable this dashboard, review and run supabase/forecast_dashboard_analytics.sql in the Supabase SQL Editor.`;
+            ['forecastRevenue', 'forecastOrders', 'forecastMae', 'forecastTopProduct', 'forecastShortage', 'forecastRestock']
+                .forEach(id => { document.getElementById(id).textContent = 'Unavailable'; });
+            ['forecastRevenueNote', 'forecastUnitsNote', 'forecastMaeNote', 'forecastTopProductNote',
+                'forecastShortageNote', 'forecastRestockNote']
+                .forEach(id => { document.getElementById(id).textContent = 'Forecast data unavailable.'; });
+            document.getElementById('forecastModelSummary').textContent = 'Actual sales could not be loaded; no forecasts or recommendations are displayed.';
+            document.getElementById('forecastInventoryNote').textContent = 'Recommendations are unavailable because current sales and inventory data could not be loaded.';
+            document.getElementById('forecastTrendChart').innerHTML = '<p class="empty">Forecast data is unavailable. No sample or generated sales are shown.</p>';
+            document.getElementById('forecastModelTable').innerHTML = '<p class="empty">Model comparison is unavailable.</p>';
+            document.getElementById('forecastProductBars').innerHTML = '<p class="empty">Forecast data is unavailable.</p>';
+            document.getElementById('forecastBranchChart').innerHTML = '<p class="empty">Forecast data is unavailable.</p>';
+            document.getElementById('forecastDailyTable').innerHTML = '<p class="empty">Forecast data is unavailable.</p>';
+            document.getElementById('forecastInventoryTable').innerHTML = '<p class="empty">Forecast data is unavailable.</p>';
+            document.getElementById('forecastInsights').innerHTML = '<p class="empty">Insights are unavailable until actual sales data can be loaded.</p>';
+        }
+    };
+
+    branchFilter.addEventListener('change', fetchData);
+    historyFilter.addEventListener('change', fetchData);
+    horizonFilter.addEventListener('change', render);
+    productFilter.addEventListener('change', render);
+    await fetchData();
+}
+
+function setForecastDashboardLoading() {
+    ['forecastRevenue', 'forecastOrders', 'forecastMae', 'forecastTopProduct', 'forecastShortage', 'forecastRestock']
+        .forEach(id => { document.getElementById(id).textContent = 'Loading…'; });
+    document.getElementById('forecastModelSummary').textContent = 'Refreshing actual sales history and validating candidate models…';
+    document.getElementById('forecastTrendChart').innerHTML = '<p class="empty">Loading actual sales and forecast…</p>';
+    document.getElementById('forecastModelTable').innerHTML = '<p class="empty">Validating models…</p>';
+    document.getElementById('forecastProductBars').innerHTML = '<p class="empty">Loading forecast…</p>';
+    document.getElementById('forecastBranchChart').innerHTML = '<p class="empty">Loading branch forecasts…</p>';
+    document.getElementById('forecastDailyTable').innerHTML = '<p class="empty">Loading daily demand…</p>';
+    document.getElementById('forecastInventoryTable').innerHTML = '<p class="empty">Loading inventory…</p>';
+    document.getElementById('forecastInsights').innerHTML = '<p class="empty">Calculating supported insights…</p>';
+}
+
+function updateForecastProductFilter(products, filter) {
+    const previous = filter.value;
+    filter.innerHTML = '<option value="all">All products</option>' +
+        products.map(product => `<option value="${Number(product.product_id)}">${escapeAdmin(product.product_name)}</option>`).join('');
+    filter.value = products.some(product => String(product.product_id) === previous) ? previous : 'all';
+}
+
+function forecastNumber(value, digits = 1) {
+    return Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: digits });
+}
+
+function forecastHorizonTotal(result, horizon) {
+    return result.forecast.slice(0, horizon).reduce((total, value) => total + value, 0);
+}
+
+function renderForecastDashboard(dashboard, filters) {
+    const branch = filters.branch;
+    const horizon = filters.horizon;
+    const selected = filters.productId === 'all' ? dashboard.products :
+        dashboard.products.filter(product => String(product.product_id) === filters.productId);
+    const eligible = selected.filter(product => product.branchForecasts[branch].result.sufficient);
+    const generated = filters.generatedAt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    const forecastProducts = eligible.map(product => {
+        const branchData = product.branchForecasts[branch];
+        const result = branchData.result;
+        return {
+            product,
+            branchData,
+            result,
+            demand: forecastHorizonTotal(result, horizon),
+            demand7: forecastHorizonTotal(result, 7),
+            revenue: forecastHorizonTotal(result, horizon) * Number(product.price || 0),
+        };
+    });
+
+    document.getElementById('reportDate').textContent = `Last generated ${generated}`;
+    document.getElementById('forecastRevenueNote').textContent =
+        `Selected period at current listed prices · ${forecastProducts.length}/${selected.length} products forecastable`;
+    document.getElementById('forecastUnitsNote').textContent =
+        `Expected demand for the next ${horizon} days · ${branch === 'all' ? 'all branches combined' : branch}`;
+    document.getElementById('forecastInventoryNote').textContent =
+        'Restock estimates compare 7-day demand with branch stock. Supplier lead time and safety stock are not tracked; suggestions do not change inventory or create orders.';
+    document.getElementById('forecastRevenue').textContent = forecastProducts.length ?
+        adminMoney(forecastProducts.reduce((total, item) => total + item.revenue, 0)) : 'Insufficient Data';
+    document.getElementById('forecastOrders').textContent = forecastProducts.length ?
+        forecastNumber(forecastProducts.reduce((total, item) => total + item.demand, 0)) : 'Insufficient Data';
+
+    const accuracyRows = forecastProducts.filter(item => item.result.metrics.observations > 0);
+    const observationCount = accuracyRows.reduce((total, item) => total + item.result.metrics.observations, 0);
+    if (observationCount) {
+        const mae = accuracyRows.reduce((total, item) => total +
+            item.result.metrics.mae * item.result.metrics.observations, 0) / observationCount;
+        const rmse = Math.sqrt(accuracyRows.reduce((total, item) => total +
+            item.result.metrics.rmse ** 2 * item.result.metrics.observations, 0) / observationCount);
+        const mapeCount = accuracyRows.reduce((total, item) => total + item.result.metrics.mapeObservations, 0);
+        const mape = mapeCount ? accuracyRows.reduce((total, item) => total +
+            (item.result.metrics.mape || 0) * item.result.metrics.mapeObservations, 0) / mapeCount : null;
+        document.getElementById('forecastMae').textContent = `${forecastNumber(mae, 2)} units`;
+        document.getElementById('forecastMaeNote').textContent =
+            `Untouched 7-day holdout · RMSE ${forecastNumber(rmse, 2)} · ${mape === null ? 'MAPE unavailable' : `MAPE ${forecastNumber(mape, 1)}% on nonzero days`}`;
+    } else {
+        document.getElementById('forecastMae').textContent = 'Insufficient Data';
+        document.getElementById('forecastMaeNote').textContent = 'Not enough held-out sales days to validate a model.';
+    }
+
+    const topProduct = forecastProducts.slice().sort((first, second) => second.demand - first.demand)[0];
+    document.getElementById('forecastTopProduct').textContent = topProduct ?
+        topProduct.product.product_name : 'Insufficient Data';
+    document.getElementById('forecastTopProductNote').textContent = topProduct ?
+        `${forecastNumber(topProduct.demand)} units in ${horizon} days · highest among forecastable products` :
+        'No reliable product forecast is available.';
+
+    const shortageRows = forecastProducts.filter(item => item.branchData.stock < item.demand7);
+    const restockTotal = shortageRows.reduce((total, item) =>
+        total + Math.max(0, Math.ceil(item.demand7 - item.branchData.stock)), 0);
+    document.getElementById('forecastShortage').textContent = forecastProducts.length ?
+        `${shortageRows.length} product${shortageRows.length === 1 ? '' : 's'}` : 'Insufficient Data';
+    document.getElementById('forecastShortageNote').textContent =
+        `${forecastProducts.length} products have a reliable 7-day estimate; shortage compares that demand with current stock.`;
+    document.getElementById('forecastRestock').textContent = forecastProducts.length ?
+        `${restockTotal.toLocaleString()} units` : 'Insufficient Data';
+    document.getElementById('forecastRestockNote').textContent =
+        'Estimated 7-day shortfall only; confirm actual stock before approving.';
+
+    const methodSummary = forecastProducts.length ?
+        summarizeForecastMethods(forecastProducts) : 'Insufficient Data';
+    document.getElementById('forecastModelSummary').textContent =
+        `${methodSummary} · ${filters.days} days of history (${dashboard.dates[0]} through ${dashboard.asOf}) · actual sales are solid; forecasts are dashed.`;
+
+    renderForecastTrendChart(dashboard, forecastProducts, filters);
+    renderForecastModelComparison(forecastProducts);
+    renderForecastProductBars(selected, branch, horizon);
+    renderForecastBranchChart(selected, horizon);
+    renderForecastDailyTable(forecastProducts, horizon, dashboard.asOf);
+    renderForecastInventoryTable(selected, branch);
+    renderForecastInsights(dashboard, forecastProducts, selected, horizon);
+}
+
+function summarizeForecastMethods(items) {
+    const counts = new Map();
+    items.forEach(item => {
+        const method = item.result.method;
+        counts.set(method, (counts.get(method) || 0) + 1);
+    });
+    return Array.from(counts.entries())
+        .sort((first, second) => second[1] - first[1])
+        .map(([method, count]) => `${method} (${count})`)
+        .join(' · ');
+}
+
+function renderForecastTrendChart(dashboard, items, filters) {
+    const target = document.getElementById('forecastTrendChart');
+    if (!items.length) {
+        target.innerHTML = '<p class="empty">Insufficient Data: at least 21 days of history and 3 days with recorded sales are required for a validated forecast.</p>';
+        return;
+    }
+
+    const history = dashboard.dates.map((_, index) =>
+        items.reduce((total, item) => total + item.branchData.history[index], 0));
+    const forecast = Array.from({ length: filters.horizon }, (_, index) =>
+        items.reduce((total, item) => total + item.result.forecast[index], 0));
+    const showRange = items.every(item => item.result.interval);
+    const lower = showRange ? forecast.map((value, index) => Math.max(0, value +
+        items.reduce((total, item) => total + item.result.interval.lowerError, 0))) : [];
+    const upper = showRange ? forecast.map((value, index) => Math.max(lower[index], value +
+        items.reduce((total, item) => total + item.result.interval.upperError, 0))) : [];
+    const maximum = Math.max(...history, ...forecast, ...upper, 1);
+    const width = 900;
+    const height = 340;
+    const left = 64;
+    const right = 18;
+    const top = 22;
+    const bottom = 54;
+    const chartWidth = width - left - right;
+    const chartHeight = height - top - bottom;
+    const count = history.length + forecast.length;
+    const x = index => left + chartWidth * index / Math.max(count - 1, 1);
+    const y = value => top + chartHeight - chartHeight * value / maximum;
+    const historyPath = history.map((value, index) =>
+        `${index ? 'L' : 'M'} ${x(index)} ${y(value)}`).join(' ');
+    const forecastPath = [history[history.length - 1], ...forecast].map((value, index) => {
+        const pointIndex = history.length - 1 + index;
+        return `${index ? 'L' : 'M'} ${x(pointIndex)} ${y(value)}`;
+    }).join(' ');
+    let range = '';
+    if (showRange) {
+        const upperPoints = upper.map((value, index) => `${x(history.length + index)} ${y(value)}`);
+        const lowerPoints = lower.map((value, index) => `${x(history.length + index)} ${y(value)}`).reverse();
+        const points = [`${x(history.length - 1)} ${y(history[history.length - 1])}`, ...upperPoints, ...lowerPoints].join(' ');
+        range = `<polygon class="forecast-uncertainty" points="${points}"></polygon>`;
+    }
+    const grid = Array.from({ length: 5 }, (_, index) => {
+        const value = maximum * (4 - index) / 4;
+        const lineY = top + chartHeight * index / 4;
+        return `<g><line class="forecast-grid-line" x1="${left}" y1="${lineY}" x2="${width - right}" y2="${lineY}"></line><text class="forecast-axis-label" x="${left - 8}" y="${lineY + 4}" text-anchor="end">${forecastNumber(value, 0)}</text></g>`;
+    }).join('');
+    const labels = Array.from({ length: 6 }, (_, index) => {
+        const pointIndex = Math.round((count - 1) * index / 5);
+        const dateIndex = Math.min(pointIndex, dashboard.dates.length - 1);
+        const date = pointIndex < dashboard.dates.length ? dashboard.dates[dateIndex] :
+            new Date(`${dashboard.asOf}T00:00:00Z`);
+        if (pointIndex >= dashboard.dates.length) date.setUTCDate(date.getUTCDate() + pointIndex - dashboard.dates.length + 1);
+        const text = typeof date === 'string' ? date.slice(5) : date.toISOString().slice(5, 10);
+        return `<text class="forecast-axis-label" x="${x(pointIndex)}" y="${height - 20}" text-anchor="middle">${text}</text>`;
+    }).join('');
+    const title = filters.productId === 'all' ? 'Combined product demand' :
+        items[0].product.product_name;
+    target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeAdmin(title)} historical sales and forecast">
+        <text class="forecast-axis-label" x="18" y="${height / 2}" text-anchor="middle" transform="rotate(-90 18 ${height / 2})">Units</text>
+        ${grid}${range}
+        <path class="forecast-history-line" d="${historyPath}"></path>
+        <path class="forecast-prediction-line" d="${forecastPath}"></path>
+        ${labels}
+    </svg>
+    <div class="forecast-legend"><span><i class="forecast-legend-actual"></i>Actual sales</span><span><i class="forecast-legend-predicted"></i>Predicted demand</span>${showRange ? '<span><i class="forecast-legend-range"></i>Backtest residual range</span>' : ''}</div>
+    <p class="forecast-chart-note">${showRange ? 'Shaded range uses observed rolling-backtest residuals (10th–90th percentiles); it is not a guaranteed confidence interval.' : 'Uncertainty range hidden because the selected model has fewer than 21 out-of-sample residuals across 3 validation folds.'}</p>`;
+}
+
+function renderForecastModelComparison(items) {
+    const target = document.getElementById('forecastModelTable');
+    const methods = window.rsmSalesForecast ? [
+        'Linear regression',
+        'Moving average',
+        'Weighted moving average',
+        'Exponential smoothing',
+    ] : [];
+    const rows = methods.map(method => {
+        const scores = items.map(item => item.result.candidates.find(candidate => candidate.method === method))
+            .filter(Boolean);
+        const observations = scores.reduce((total, score) => total + score.observations, 0);
+        if (!observations) return null;
+        const mae = scores.reduce((total, score) => total + score.mae * score.observations, 0) / observations;
+        const rmse = Math.sqrt(scores.reduce((total, score) => total +
+            score.rmse ** 2 * score.observations, 0) / observations);
+        const mapeObservations = scores.reduce((total, score) => total + score.mapeObservations, 0);
+        const mape = mapeObservations ? scores.reduce((total, score) => total +
+            (score.mape || 0) * score.mapeObservations, 0) / mapeObservations : null;
+        const selectedCount = items.filter(item => item.result.method === method).length;
+        return { method, mae, rmse, mape, selectedCount, observations };
+    }).filter(Boolean).sort((first, second) => first.mae - second.mae);
+    if (!rows.length) {
+        target.innerHTML = '<p class="empty">Insufficient Data for time-based model comparison.</p>';
+        return;
+    }
+    target.innerHTML = `<div class="table-scroll"><table><thead><tr><th>Method</th><th>Rolling validation MAE ↓</th><th>RMSE</th><th>MAPE*</th><th>Selected for products</th></tr></thead><tbody>${rows.map(row =>
+        `<tr><th scope="row">${escapeAdmin(row.method)}</th><td>${forecastNumber(row.mae, 2)} units</td><td>${forecastNumber(row.rmse, 2)} units</td><td>${row.mape === null ? 'N/A' : `${forecastNumber(row.mape, 1)}%`}</td><td>${row.selectedCount}</td></tr>`
+    ).join('')}</tbody></table></div><p class="forecast-chart-note">Scores aggregate ${rows[0].observations} older held-out product-days across forecastable products; the latest 7 days are reserved for the displayed accuracy KPI. *MAPE excludes days with zero actual sales. A lower error is better.</p>`;
+}
+
+function renderForecastProductBars(products, branch, horizon) {
+    const target = document.getElementById('forecastProductBars');
+    const rows = products.map(product => ({
+        product,
+        result: product.branchForecasts[branch].result,
+    })).filter(item => item.result.sufficient)
+        .map(item => ({ ...item, demand: forecastHorizonTotal(item.result, horizon) }))
+        .sort((first, second) => second.demand - first.demand);
+    if (!rows.length) {
+        target.innerHTML = '<p class="empty">Insufficient Data: no product has enough history for a validated forecast.</p>';
+        return;
+    }
+    const maximum = Math.max(...rows.map(item => item.demand), 1);
+    target.innerHTML = rows.map(item => `<div class="forecast-bar-row">
+        <span>${escapeAdmin(item.product.product_name)}</span>
+        <div class="forecast-bar"><i style="width:${Math.min(100, item.demand / maximum * 100)}%"></i></div>
+        <strong>${forecastNumber(item.demand)} units</strong>
+    </div>`).join('');
+}
+
+function renderForecastBranchChart(products, horizon) {
+    const target = document.getElementById('forecastBranchChart');
+    const branches = window.rsmSalesForecast.branches.map(branch => {
+        const values = products.map(product => {
+            const result = product.branchForecasts[branch].result;
+            return result.sufficient ? forecastHorizonTotal(result, horizon) : null;
+        }).filter(value => value !== null);
+        return { branch, demand: values.reduce((total, value) => total + value, 0), coverage: values.length };
+    });
+    const maximum = Math.max(...branches.map(item => item.demand), 1);
+    target.innerHTML = branches.map(item => `<div class="forecast-bar-row forecast-branch-row">
+        <span>${escapeAdmin(item.branch)}</span>
+        <div class="forecast-bar"><i style="width:${Math.min(100, item.demand / maximum * 100)}%"></i></div>
+        <strong>${item.coverage ? `${forecastNumber(item.demand)} units` : 'Insufficient Data'}<small>${item.coverage}/${products.length} products</small></strong>
+    </div>`).join('');
+}
+
+function renderForecastDailyTable(items, horizon, asOf) {
+    const target = document.getElementById('forecastDailyTable');
+    if (!items.length) {
+        target.innerHTML = '<p class="empty">Insufficient Data for daily demand estimates.</p>';
+        return;
+    }
+    const daily = Array.from({ length: horizon }, (_, index) => ({
+        date: new Date(`${asOf}T00:00:00Z`),
+        units: items.reduce((total, item) => total + item.result.forecast[index], 0),
+    }));
+    daily.forEach((item, index) => item.date.setUTCDate(item.date.getUTCDate() + index + 1));
+    target.innerHTML = `<div class="table-scroll"><table><thead><tr><th>Date</th><th>Predicted units</th></tr></thead><tbody>${daily.map(item =>
+        `<tr><td>${item.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' })}</td><td>${forecastNumber(item.units)}</td></tr>`
+    ).join('')}</tbody></table></div>`;
+}
+
+function forecastInventoryStatus(stock, demand, sufficient) {
+    if (!sufficient) return 'Insufficient Data';
+    if (demand > 0 && stock <= demand * 0.2) return 'Critical Stock';
+    if (stock < demand) return 'Restock Recommended';
+    if (stock <= 10 || stock < demand * 1.25) return 'Low Stock';
+    return 'Sufficient Stock';
+}
+
+function renderForecastInventoryTable(products, branch) {
+    const target = document.getElementById('forecastInventoryTable');
+    if (!products.length) {
+        target.innerHTML = '<p class="empty">No active products match this filter.</p>';
+        return;
+    }
+    target.innerHTML = `<div class="table-scroll"><table class="forecast-inventory-table">
+        <thead><tr><th>Product</th><th>Available stock</th><th>Predicted 7-day demand</th><th>Estimated remaining</th><th>Recommended restock</th><th>Status</th></tr></thead>
+        <tbody>${products.map(product => {
+            const data = product.branchForecasts[branch];
+            const result = data.result;
+            const demand = result.sufficient ? forecastHorizonTotal(result, 7) : null;
+            const restock = result.sufficient ? Math.max(0, Math.ceil(demand - data.stock)) : null;
+            const remaining = result.sufficient ? data.stock - demand : null;
+            const inventoryStatus = forecastInventoryStatus(data.stock, demand || 0, result.sufficient);
+            const statusClass = inventoryStatus.toLowerCase().replace(/ /g, '-');
+            return `<tr>
+                <th scope="row">${escapeAdmin(product.product_name)}</th>
+                <td>${forecastNumber(data.stock, 0)}</td>
+                <td>${result.sufficient ? forecastNumber(demand) : 'Insufficient Data'}</td>
+                <td>${result.sufficient ? forecastNumber(remaining) : 'Insufficient Data'}</td>
+                <td>${result.sufficient ? restock.toLocaleString() : 'Insufficient Data'}</td>
+                <td><span class="forecast-stock-status ${statusClass}">${inventoryStatus}</span></td>
+            </tr>`;
+        }).join('')}</tbody></table></div>`;
+}
+
+function renderForecastInsights(dashboard, forecastProducts, selectedProducts, horizon) {
+    const target = document.getElementById('forecastInsights');
+    const insights = [];
+    if (!forecastProducts.length) {
+        target.innerHTML = '<p class="empty">Insufficient Data: insights need at least 21 days of history and 3 days with recorded sales.</p>';
+        return;
+    }
+    const topProduct = forecastProducts.slice().sort((first, second) => second.demand - first.demand)[0];
+    if (topProduct) {
+        insights.push(`${escapeAdmin(topProduct.product.product_name)} is projected to have the highest demand (${forecastNumber(topProduct.demand)} units) over the next ${horizon} days.`);
+    }
+
+    const trends = forecastProducts.map(item => {
+        const history = item.branchData.history;
+        const recent = history.slice(-7).reduce((total, value) => total + value, 0);
+        const previous = history.slice(-14, -7).reduce((total, value) => total + value, 0);
+        return { ...item, recent, previous };
+    }).filter(item => item.recent > 0 || item.previous > 0)
+        .sort((first, second) => Math.abs(second.recent - second.previous) - Math.abs(first.recent - first.previous));
+    const unusual = trends.find(item => item.previous > 0 &&
+        (item.recent >= item.previous * 1.5 || item.recent <= item.previous * 0.5) &&
+        Math.abs(item.recent - item.previous) >= 3);
+    if (unusual) {
+        const direction = unusual.recent > unusual.previous ? 'increased' : 'decreased';
+        insights.push(`${escapeAdmin(unusual.product.product_name)} demand ${direction} by ${forecastNumber(Math.abs(unusual.recent - unusual.previous), 0)} units versus the preceding 7 days; review this unusual change.`);
+    } else {
+        const newDemand = trends.find(item => item.previous === 0 && item.recent >= 3);
+        const rising = trends.find(item => item.previous > 0 && item.recent >= item.previous * 1.2);
+        if (newDemand) {
+            insights.push(`${escapeAdmin(newDemand.product.product_name)} had ${forecastNumber(newDemand.recent, 0)} units of demand in the latest week after none in the preceding week; review this change.`);
+        } else if (rising) {
+            insights.push(`${escapeAdmin(rising.product.product_name)} demand is increasing compared with the previous week (${forecastNumber(rising.recent)} vs ${forecastNumber(rising.previous)} units).`);
+        }
+    }
+
+    const branchTotals = dashboard.branches.map(branch => {
+        const available = selectedProducts.map(product => {
+            const result = product.branchForecasts[branch].result;
+            return result.sufficient ? forecastHorizonTotal(result, horizon) : null;
+        }).filter(value => value !== null);
+        return { branch, demand: available.reduce((total, value) => total + value, 0), coverage: available.length };
+    }).filter(item => item.coverage === selectedProducts.length && item.coverage > 0);
+    if (branchTotals.length > 1) {
+        branchTotals.sort((first, second) => second.demand - first.demand);
+        insights.push(`${escapeAdmin(branchTotals[0].branch)} has the highest projected demand among branches with complete product coverage (${forecastNumber(branchTotals[0].demand)} units).`);
+    }
+
+    const branchShortages = dashboard.branches.map(branch => {
+        const products = selectedProducts.map(product => {
+            const branchData = product.branchForecasts[branch];
+            const result = branchData.result;
+            if (!result.sufficient) return null;
+            const demand = forecastHorizonTotal(result, 7);
+            return { stock: branchData.stock, demand };
+        });
+        if (products.some(item => !item)) return null;
+        const shortageProducts = products.filter(item => item.stock < item.demand);
+        const restockUnits = shortageProducts.reduce((total, item) =>
+            total + Math.ceil(item.demand - item.stock), 0);
+        return { branch, shortageProducts: shortageProducts.length, restockUnits };
+    }).filter(item => item && item.shortageProducts > 0)
+        .sort((first, second) => second.restockUnits - first.restockUnits);
+    if (branchShortages.length) {
+        const branch = branchShortages[0];
+        insights.push(`${escapeAdmin(branch.branch)} may need additional inventory for ${branch.shortageProducts} product${branch.shortageProducts === 1 ? '' : 's'}; the estimated 7-day shortfall is ${branch.restockUnits} units.`);
+    }
+
+    const shortageCount = forecastProducts.filter(item => item.branchData.stock < item.demand7).length;
+    if (shortageCount) {
+        insights.push(`${shortageCount} product${shortageCount === 1 ? '' : 's'} may need review against projected 7-day demand. Recommendations do not place orders or modify stock.`);
+    } else {
+        insights.push(`Current stock covers the 7-day forecast for the ${forecastProducts.length} product${forecastProducts.length === 1 ? '' : 's'} with reliable estimates.`);
+    }
+
+    const patternItem = trends.find(item => item.branchData.history.length >= 28);
+    if (patternItem) {
+        const weekdayTotals = Array(7).fill(0);
+        const weekdayCounts = Array(7).fill(0);
+        patternItem.branchData.history.forEach((units, index) => {
+            const weekday = new Date(`${dashboard.dates[index]}T00:00:00Z`).getUTCDay();
+            weekdayTotals[weekday] += units;
+            weekdayCounts[weekday]++;
+        });
+        const weekdayAverages = weekdayTotals.map((total, index) => weekdayCounts[index] ? total / weekdayCounts[index] : 0);
+        const strongest = weekdayAverages.indexOf(Math.max(...weekdayAverages));
+        const average = weekdayAverages.reduce((total, value) => total + value, 0) / weekdayAverages.length;
+        if (average > 0 && weekdayAverages[strongest] >= average * 1.25) {
+            const dayName = new Date(Date.UTC(2024, 0, strongest)).toLocaleDateString(undefined, { weekday: 'long', timeZone: 'UTC' });
+            insights.push(`${escapeAdmin(patternItem.product.product_name)} has its strongest average sales on ${dayName}, based on the selected history.`);
+        }
+    }
+
+    target.innerHTML = `<ul>${insights.map(insight => `<li>${insight}</li>`).join('')}</ul>`;
 }
 
 async function setupDeliveryQueue() {
@@ -1627,9 +2052,11 @@ async function loadPerformanceAnalytics(period, date) {
         document.getElementById('performanceInsight').innerHTML = `<strong>Decision cue:</strong> fulfillment for the ${periodLabel} is at ${fulfillment}%. Keep the delivery desk clear to protect the branch experience.`;
         document.getElementById('performanceComparisonPeriod').textContent = periodLabel;
         renderBranchComparison(data.branches || []);
+        renderPerformanceCharts(data.branches || [], data.monthly_sales || [], date);
         status.textContent = `Updated at ${new Date().toLocaleTimeString()}. Refreshes every 15 seconds.`;
     } catch (error) {
         if (request !== performanceAnalyticsRequest) return;
+        renderPerformanceCharts([], [], date);
         status.textContent = error.message || 'Could not load branch performance.';
         filterStatus.textContent = error.message || 'Could not load branch performance.';
     }
@@ -1656,6 +2083,139 @@ function renderBranchComparison(branchData) {
     }
     const highestRevenue = Math.max(...branches.map(branch => branch.revenue), 0);
     document.getElementById('branchComparison').innerHTML = `<div class="comparison-table"><div class="comparison-row comparison-heading"><span>Branch</span><span>Revenue</span><span>Orders</span><span>Fulfillment</span><span>Score</span></div>${branches.map((branch, index) => `<div class="comparison-row"><span class="branch-name"><b class="rank">${index + 1}</b>${escapeAdmin(branch.name)}</span><span>${adminMoney(branch.revenue)}<i class="mini-bar"><em style="width:${highestRevenue ? Math.round((branch.revenue / highestRevenue) * 100) : 0}%"></em></i></span><span>${branch.orders}</span><span>${branch.fulfillment}%</span><strong>${branch.score}</strong></div>`).join('')}</div><div class="comparison-summary"><span><b>Top branch</b> ${escapeAdmin(branches[0].name)}</span><span><b>Needs attention</b> ${escapeAdmin(branches[branches.length - 1].name)} · ${branches[branches.length - 1].open} open deliveries</span></div>`;
+}
+
+function renderPerformanceCharts(branchData, monthlySales, date) {
+    const branches = branchData.map(branch => ({
+        name: String(branch.name || ''),
+        revenue: Number(branch.revenue || 0),
+        orders: Number(branch.orders || 0)
+    }));
+    renderPerformanceBarChart('performanceSalesChart', branches, 'revenue', adminMoney, 'Sales by branch', 'Total sales (₱)');
+    renderPerformanceBarChart('performanceOrdersChart', branches, 'orders', value => Number(value).toLocaleString(), 'Orders by branch', 'Number of orders');
+    document.getElementById('performanceTrendYear').textContent = date.slice(0, 4);
+    renderMonthlySalesChart(monthlySales, branches, date.slice(0, 4));
+}
+
+function renderPerformanceBarChart(targetId, branches, metric, formatValue, title, axisLabel) {
+    const target = document.getElementById(targetId);
+    if (!branches.length) {
+        target.innerHTML = '<p class="empty">Branch data is unavailable for this period.</p>';
+        return;
+    }
+
+    const values = branches.map(branch => branch[metric]);
+    const maximum = Math.max(...values, 0);
+    const rawStep = maximum > 0 ? maximum / 4 : 1;
+    const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+    const normalizedStep = rawStep / magnitude;
+    const step = (normalizedStep <= 1 ? 1 : normalizedStep <= 2 ? 2 : normalizedStep <= 5 ? 5 : 10) * magnitude;
+    const axisMaximum = step * 4;
+    const width = 860;
+    const height = 330;
+    const left = 96;
+    const right = 18;
+    const top = 20;
+    const bottom = 58;
+    const chartWidth = width - left - right;
+    const chartHeight = height - top - bottom;
+    const colors = ['#087f78', '#1aa7c1', '#d98a10', '#5572d8'];
+    const grid = Array.from({ length: 5 }, (_, index) => {
+        const value = axisMaximum - (step * index);
+        const y = top + (chartHeight * index / 4);
+        return `<g><line class="chart-grid-line" x1="${left}" y1="${y}" x2="${width - right}" y2="${y}"></line><text class="chart-axis-label" x="${left - 10}" y="${y + 5}" text-anchor="end">${formatValue(value)}</text></g>`;
+    }).join('');
+    const bars = branches.map((branch, index) => {
+        const groupWidth = chartWidth / branches.length;
+        const barWidth = Math.min(92, groupWidth * 0.58);
+        const center = left + (groupWidth * (index + 0.5));
+        const barHeight = chartHeight * branch[metric] / axisMaximum;
+        const y = top + chartHeight - barHeight;
+        return `<g>
+            <rect x="${center - barWidth / 2}" y="${y}" width="${barWidth}" height="${barHeight}" rx="5" fill="${colors[index % colors.length]}"><title>${escapeAdmin(branch.name)}: ${formatValue(branch[metric])}</title></rect>
+            <text class="branch-sales-value" x="${center}" y="${Math.max(top + 12, y - 9)}" text-anchor="middle">${formatValue(branch[metric])}</text>
+            <text class="chart-date-label" x="${center}" y="${height - 18}" text-anchor="middle">${escapeAdmin(branch.name)}</text>
+        </g>`;
+    }).join('');
+
+    target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${targetId}Title ${targetId}Description">
+        <title id="${targetId}Title">${title}</title>
+        <desc id="${targetId}Description">${branches.map(branch => `${escapeAdmin(branch.name)}: ${formatValue(branch[metric])}`).join('; ')}</desc>
+        <text class="chart-axis-label" x="20" y="${height / 2}" text-anchor="middle" transform="rotate(-90 20 ${height / 2})">${axisLabel}</text>
+        ${grid}${bars}
+    </svg>`;
+}
+
+function renderMonthlySalesChart(monthlySales, branches, year) {
+    const target = document.getElementById('performanceMonthlySalesChart');
+    const branchNames = branches.map(branch => branch.name);
+    if (!branchNames.length || !monthlySales.length) {
+        target.innerHTML = `<p class="empty">Monthly sales data is unavailable for ${escapeAdmin(year)}.</p>`;
+        return;
+    }
+
+    const series = branchNames.map((name, branchIndex) => ({
+        name,
+        color: ['#087f78', '#1aa7c1', '#d98a10', '#5572d8'][branchIndex % 4],
+        values: Array(12).fill(0)
+    }));
+    const seriesByName = new Map(series.map(item => [item.name, item]));
+    monthlySales.forEach(row => {
+        const month = Number(row.month);
+        const item = seriesByName.get(String(row.branch || ''));
+        if (item && Number.isInteger(month) && month >= 1 && month <= 12) {
+            item.values[month - 1] = Number(row.revenue || 0);
+        }
+    });
+
+    const maximum = Math.max(...series.flatMap(item => item.values), 0);
+    const rawStep = maximum > 0 ? maximum / 4 : 1;
+    const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+    const normalizedStep = rawStep / magnitude;
+    const step = (normalizedStep <= 1 ? 1 : normalizedStep <= 2 ? 2 : normalizedStep <= 5 ? 5 : 10) * magnitude;
+    const axisMaximum = step * 4;
+    const width = 900;
+    const height = 360;
+    const left = 96;
+    const right = 20;
+    const top = 24;
+    const bottom = 48;
+    const chartWidth = width - left - right;
+    const chartHeight = height - top - bottom;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const grid = Array.from({ length: 5 }, (_, index) => {
+        const value = axisMaximum - (step * index);
+        const y = top + (chartHeight * index / 4);
+        return `<g><line class="chart-grid-line" x1="${left}" y1="${y}" x2="${width - right}" y2="${y}"></line><text class="chart-axis-label" x="${left - 10}" y="${y + 5}" text-anchor="end">${adminMoney(value)}</text></g>`;
+    }).join('');
+    const lines = series.map(item => {
+        const points = item.values.map((value, index) => ({
+            x: left + (chartWidth * index / 11),
+            y: top + chartHeight - (chartHeight * value / axisMaximum),
+            value,
+            month: months[index]
+        }));
+        const path = points.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ');
+        return `<g>
+            <path class="performance-trend-line" d="${path}" stroke="${item.color}"></path>
+            ${points.map(point => `<circle class="performance-trend-point" cx="${point.x}" cy="${point.y}" r="3.5" stroke="${item.color}"><title>${escapeAdmin(point.month)} · ${escapeAdmin(item.name)}: ${adminMoney(point.value)}</title></circle>`).join('')}
+        </g>`;
+    }).join('');
+    const monthLabels = months.map((month, index) => {
+        const x = left + (chartWidth * index / 11);
+        return `<text class="chart-date-label" x="${x}" y="${height - 14}" text-anchor="middle">${month}</text>`;
+    }).join('');
+    const legend = series.map(item => `<span><i style="background:${item.color}"></i>${escapeAdmin(item.name)}</span>`).join('');
+    const description = series.map(item =>
+        `${item.name}: ${item.values.map((value, index) => `${months[index]} ${adminMoney(value)}`).join(', ')}`
+    ).map(escapeAdmin).join('; ');
+
+    target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="performanceMonthlySalesTitle performanceMonthlySalesDescription">
+        <title id="performanceMonthlySalesTitle">Monthly sales per branch for ${escapeAdmin(year)}</title>
+        <desc id="performanceMonthlySalesDescription">${description}</desc>
+        <text class="chart-axis-label" x="20" y="${height / 2}" text-anchor="middle" transform="rotate(-90 20 ${height / 2})">Total sales (₱)</text>
+        ${grid}${lines}${monthLabels}
+    </svg><div class="performance-chart-legend">${legend}</div>`;
 }
 
 function showToast(message) {

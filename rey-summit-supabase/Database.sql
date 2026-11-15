@@ -1463,6 +1463,7 @@ declare
     v_start date;
     v_end date;
     v_monthly jsonb;
+    v_monthly_sales jsonb;
     v_fulfillment numeric;
     v_open int;
     v_branches jsonb;
@@ -1525,9 +1526,26 @@ begin
       ) t on t.branch = b.name
      where v_b = 'all' or b.name = v_b;
 
+    select coalesce(jsonb_agg(jsonb_build_object(
+               'month', m.month, 'branch', b.name, 'revenue', coalesce(t.revenue, 0))
+               order by m.month, b.ord), '[]'::jsonb)
+      into v_monthly_sales
+      from generate_series(1, 12) as m(month)
+      cross join unnest(public.rsm_int_branches()) with ordinality as b(name, ord)
+      left join (
+          select s.branch,
+                 extract(month from public.rsm_local(s.sale_date))::int as month,
+                 sum(s.total_amount) as revenue
+            from public.rsm_int_sales_rows() s
+           where public.rsm_local(s.sale_date)::date >= date_trunc('year', v_selected)::date
+             and public.rsm_local(s.sale_date)::date < (date_trunc('year', v_selected) + interval '1 year')::date
+           group by s.branch, extract(month from public.rsm_local(s.sale_date))
+      ) t on t.branch = b.name and t.month = m.month
+     where v_b = 'all' or b.name = v_b;
+
     return jsonb_build_object(
         'success', true, 'branch', v_b, 'period', v_period, 'selected_date', v_selected,
-        'monthly', v_monthly, 'fulfillment_rate', v_fulfillment,
+        'monthly', v_monthly, 'monthly_sales', v_monthly_sales, 'fulfillment_rate', v_fulfillment,
         'open_deliveries', v_open, 'branches', v_branches);
 end $$;
 

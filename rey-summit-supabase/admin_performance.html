@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Branch Performance | Rey Summit</title>
-	<link rel="stylesheet" href="admin_sections.css?v=25">
+	<link rel="stylesheet" href="admin_sections.css?v=26">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-api.js"></script>
@@ -54,9 +54,23 @@
 				<div id="branchComparison" class="branch-comparison"><p class="empty">Loading branch comparison...</p></div>
 				<p id="branchComparisonStatus" class="empty" aria-live="polite"></p>
 			</section>
+			<section class="performance-chart-grid" aria-label="Branch sales and order charts">
+				<article class="panel performance-chart-card">
+					<div class="panel-head"><div><h3>Sales performance by branch</h3><p class="panel-note">Total sales (₱) for the selected period.</p></div></div>
+					<div id="performanceSalesChart" class="performance-chart"><p class="empty">Loading branch sales...</p></div>
+				</article>
+				<article class="panel performance-chart-card">
+					<div class="panel-head"><div><h3>Orders by branch</h3><p class="panel-note">Non-cancelled orders for the selected period.</p></div></div>
+					<div id="performanceOrdersChart" class="performance-chart"><p class="empty">Loading branch orders...</p></div>
+				</article>
+				<article class="panel performance-chart-card performance-chart-wide">
+					<div class="panel-head"><div><h3>Monthly sales per branch</h3><p class="panel-note">Sales trends by month for the selected year.</p></div><span id="performanceTrendYear" class="comparison-period"></span></div>
+					<div id="performanceMonthlySalesChart" class="performance-chart"><p class="empty">Loading monthly sales...</p></div>
+				</article>
+			</section>
 			<section class="panel"><div class="insight" id="performanceInsight">Preparing performance insight...</div><p id="pageMessage" class="empty"></p></section>
 		</main>
 	</div>
-	<script src="admin_sections.js?v=23"></script>
+	<script src="admin_sections.js?v=26"></script>
 </body>
 </html>
