@@ -151,7 +151,7 @@ function renderGrid(products) {
         const stockQty = Number(p.stock_qty) || 0;
         const inStock = stockQty > 0;
         const lowStock = inStock && stockQty <= 5;
-        const stockLabel = !inStock ? 'Out of stock' : (lowStock ? `Only ${p.stock_qty} left` : `${p.stock_qty} in stock`);
+        const stockLabel = !inStock ? 'Out of stock' : (lowStock ? `Only ${p.stock_qty} left` : '');
         const stockClass = !inStock ? 'out' : (lowStock ? 'low' : '');
         const qtyInCart = CART[p.product_id] ? CART[p.product_id].quantity : 0;
         const remainingStock = Math.max(0, stockQty - qtyInCart);
@@ -171,7 +171,7 @@ function renderGrid(products) {
                 <span class="p-desc">${escapeHtml(p.description || '')}</span>
                 <div class="p-price-row">
                     <span class="p-price">${money(p.price)}</span>
-                    <span class="p-stock ${stockClass}">${stockLabel}</span>
+                    ${stockLabel ? `<span class="p-stock ${stockClass}">${stockLabel}</span>` : ''}
                 </div>
                 <div class="qty-row">
                     <button type="button" class="qty-minus" disabled>−</button>
