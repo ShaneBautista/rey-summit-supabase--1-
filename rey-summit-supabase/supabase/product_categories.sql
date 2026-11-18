@@ -32,8 +32,7 @@ begin
                 left join public.product_categories c on c.category_id = p.category_id
                 left join public.product_branch_stock pbs
                   on pbs.product_id = p.product_id and (v_b = 'all' or pbs.branch = v_b)
-               where p.is_active
-                 and (v_b = 'all' or exists (
+               where (v_b = 'all' or exists (
                      select 1 from public.product_branch_stock branch_stock
                       where branch_stock.product_id = p.product_id and branch_stock.branch = v_b
                  ))
@@ -67,6 +66,23 @@ begin
          where product_id = v_id and is_active
            and not exists (select 1 from public.product_branch_stock where product_id = v_id);
         return jsonb_build_object('success', true, 'message', 'Product removed from this branch.');
+    end if;
+
+    if v_action in ('archive', 'unarchive') then
+        if v_id is null or v_id < 1 then return public.rsm_fail('A valid product is required.', 422); end if;
+        update public.products
+           set is_active = (v_action = 'unarchive')
+         where product_id = v_id
+           and is_active = (v_action = 'archive')
+           and exists (
+               select 1 from public.product_branch_stock
+                where product_id = v_id and branch = v_b
+           );
+        if not found then return public.rsm_fail('Product not found or already updated.', 404); end if;
+        return jsonb_build_object(
+            'success', true,
+            'message', case when v_action = 'archive' then 'Product archived.' else 'Product unarchived.' end
+        );
     end if;
 
     if v_action not in ('create', 'update') then return public.rsm_fail('Unknown product action.', 400); end if;

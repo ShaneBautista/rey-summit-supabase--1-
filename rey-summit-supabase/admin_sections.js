@@ -594,17 +594,27 @@ async function loadInventory() {
         document.getElementById('cancelEdit').addEventListener('click', resetProductForm);
         inventoryEventsBound = true;
     }
-    drawInventory('all');
+    drawInventory();
 }
 
 function drawInventory(filter = document.getElementById('inventoryFilter').value) {
-    const normalizedFilter = filter === 'low' || filter === 'healthy' ? filter : 'all';
+    const normalizedFilter = ['low', 'healthy', 'archived'].includes(filter) ? filter : 'all';
     const rows = inventoryProducts.filter(product => {
         const active = Number(product.is_active) === 1;
+        if (normalizedFilter === 'archived') return !active;
         return active && (normalizedFilter === 'all' || (normalizedFilter === 'low' && Number(product.stock_qty) <= 10) || (normalizedFilter === 'healthy' && Number(product.stock_qty) > 10));
     });
-    document.getElementById('inventoryTable').innerHTML = rows.length ? `<div class="table-scroll"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(product => `<tr class="${Number(product.stock_qty) <= 10 && Number(product.is_active) ? 'stock-low' : ''}"><td><strong>${escapeAdmin(product.product_name)}</strong>${product.description ? `<small class="product-description">${escapeAdmin(product.description)}</small>` : ''}</td><td>${escapeAdmin(product.category_name || 'Uncategorised')}</td><td>${adminMoney(product.price)}</td><td class="stock-count">${product.stock_qty}</td><td>${Number(product.stock_qty) <= 10 ? 'Restock soon' : 'Healthy'}</td><td class="product-actions">${inventoryBranch === 'all' ? '—' : `<button type="button" class="text-button" data-edit="${product.product_id}">Edit</button>`}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No products match this filter.</p>';
+    document.getElementById('inventoryTable').innerHTML = rows.length ? `<div class="table-scroll"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(product => {
+        const active = Number(product.is_active) === 1;
+        const status = active ? (Number(product.stock_qty) <= 10 ? 'Restock soon' : 'Healthy') : 'Archived';
+        const actions = inventoryBranch === 'all' ? '—' : active
+            ? `<button type="button" class="text-button" data-edit="${product.product_id}">Edit</button><button type="button" class="text-button archive" data-archive="${product.product_id}">Archive</button>`
+            : `<button type="button" class="text-button" data-unarchive="${product.product_id}">Unarchive</button>`;
+        return `<tr class="${Number(product.stock_qty) <= 10 && active ? 'stock-low' : ''}"><td><strong>${escapeAdmin(product.product_name)}</strong>${product.description ? `<small class="product-description">${escapeAdmin(product.description)}</small>` : ''}</td><td>${escapeAdmin(product.category_name || 'Uncategorised')}</td><td>${adminMoney(product.price)}</td><td class="stock-count">${product.stock_qty}</td><td>${status}</td><td class="product-actions">${actions}</td></tr>`;
+    }).join('')}</tbody></table></div>` : '<p class="empty">No products match this filter.</p>';
     document.querySelectorAll('[data-edit]').forEach(button => button.addEventListener('click', () => editProduct(button.dataset.edit)));
+    document.querySelectorAll('[data-archive]').forEach(button => button.addEventListener('click', () => manageProductArchive(button.dataset.archive, 'archive')));
+    document.querySelectorAll('[data-unarchive]').forEach(button => button.addEventListener('click', () => manageProductArchive(button.dataset.unarchive, 'unarchive')));
 }
 
 function editProduct(id) {
@@ -659,6 +669,30 @@ async function saveProduct(event) {
         showToast(result.message);
     } catch (error) {
         document.getElementById('formMessage').textContent = error.message || 'Could not save product.';
+    }
+}
+
+async function manageProductArchive(productId, action) {
+    if (action === 'archive' && !window.confirm('Archive this product? It will be removed from all products until it is unarchived.')) return;
+    try {
+        const response = await rsmApi('admin_products.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ action, product_id: productId })
+        });
+        const result = await response.json();
+        if (response.status === 401) {
+            window.location.href = 'Admin_login.html';
+            return;
+        }
+        if (!result.success) throw new Error(result.message || `Could not ${action} product.`);
+        document.getElementById('inventoryFilter').value = action === 'archive' ? 'archived' : 'all';
+        await loadInventory();
+        showToast(result.message);
+    } catch (error) {
+        document.getElementById('pageMessage').textContent = error.message || `Could not ${action} product.`;
     }
 }
 
@@ -776,7 +810,6 @@ async function loadOverviewAnalytics(period, date) {
         document.querySelector('.overview-dashboard-panel > .panel-head .panel-note').textContent =
             `Completed sales and customer order activity for the ${periodLabel}; inventory shows current stock across all branches.`;
         document.getElementById('branchSalesPeriodNote').textContent = `Completed revenue · ${periodLabel} · all branches`;
-        document.getElementById('dailyOrdersPeriodNote').textContent = `Orders and counter sales by day · ${periodLabel}`;
         status.textContent = '';
     } catch (error) {
         if (request === overviewAnalyticsRequest) {
@@ -909,58 +942,91 @@ function renderDailyOrderTrend(rows, period, selectedDate) {
     const target = document.getElementById('dailyOrdersChart');
     const valuesByDate = new Map(rows.map(row => [String(row.sale_date), Number(row.order_count || 0)]));
     const [year, month, day] = selectedDate.split('-').map(Number);
-    const count = period === 'day' ? 1 :
-        period === 'month' ? new Date(year, month, 0).getDate() :
-        new Date(year, 1, 29).getMonth() === 1 ? 366 : 365;
-    const buckets = Array.from({ length: count }, (_, index) => {
-        const date = period === 'year' ? new Date(year, 0, index + 1) :
-            period === 'month' ? new Date(year, month - 1, index + 1) :
-            new Date(year, month - 1, day);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        return {
-            key,
-            label: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-            value: valuesByDate.get(key) || 0
-        };
-    });
+    let buckets;
+    if (period === 'year') {
+        buckets = Array.from({ length: 12 }, (_, index) => {
+            const date = new Date(year, index, 1);
+            const keyPrefix = `${year}-${String(index + 1).padStart(2, '0')}-`;
+            const value = Array.from(valuesByDate.entries())
+                .filter(([key]) => key.startsWith(keyPrefix))
+                .reduce((total, [, count]) => total + count, 0);
+            return {
+                key: keyPrefix,
+                label: date.toLocaleDateString(undefined, { month: 'short' }),
+                value
+            };
+        });
+    } else {
+        const count = period === 'month' ? new Date(year, month, 0).getDate() : 1;
+        buckets = Array.from({ length: count }, (_, index) => {
+            const date = period === 'month' ? new Date(year, month - 1, index + 1) : new Date(year, month - 1, day);
+            const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            return {
+                key,
+                label: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+                value: valuesByDate.get(key) || 0
+            };
+        });
+    }
+
+    const total = buckets.reduce((sum, bucket) => sum + bucket.value, 0);
+    const peak = buckets.reduce((highest, bucket) => bucket.value > highest.value ? bucket : highest, buckets[0]);
     const maxValue = Math.max(...buckets.map(bucket => bucket.value), 0);
-    const rawStep = maxValue > 0 ? maxValue / 3 : 1;
+    const rawStep = Math.max(1, maxValue / 4);
     const magnitude = 10 ** Math.floor(Math.log10(rawStep));
     const normalizedStep = rawStep / magnitude;
     const step = (normalizedStep <= 1 ? 1 : normalizedStep <= 2 ? 2 : normalizedStep <= 5 ? 5 : 10) * magnitude;
-    const axisMax = step * 3;
+    const axisMax = step * 4;
     const width = 900;
-    const height = 300;
-    const left = 48;
-    const right = 18;
-    const top = 18;
-    const bottom = 42;
+    const height = 320;
+    const left = 64;
+    const right = 20;
+    const top = 24;
+    const bottom = 52;
     const chartWidth = width - left - right;
     const chartHeight = height - top - bottom;
-    const points = buckets.map((bucket, index) => ({
-        x: left + (buckets.length === 1 ? chartWidth / 2 : chartWidth * index / (buckets.length - 1)),
-        y: top + chartHeight * (1 - bucket.value / axisMax)
-    }));
-    const gridLines = Array.from({ length: 4 }, (_, index) => {
+    const slotWidth = chartWidth / buckets.length;
+    const barWidth = Math.max(2, Math.min(34, slotWidth * 0.64));
+    const gridLines = Array.from({ length: 5 }, (_, index) => {
         const value = axisMax - (step * index);
-        const y = top + (chartHeight * index / 3);
-        return `<g><line class="chart-grid-line" x1="${left}" y1="${y}" x2="${width - right}" y2="${y}"></line><text class="chart-axis-label" x="${left - 9}" y="${y + 5}" text-anchor="end">${Math.round(value).toLocaleString()}</text></g>`;
+        const y = top + (chartHeight * index / 4);
+        return `<g><line class="chart-grid-line" x1="${left}" y1="${y}" x2="${width - right}" y2="${y}"></line><text class="chart-axis-label" x="${left - 10}" y="${y + 4}" text-anchor="end">${Math.round(value).toLocaleString()}</text></g>`;
     }).join('');
-    const linePoints = points.map(point => `${point.x},${point.y}`).join(' ');
-    const pointMarks = points.map((point, index) => `<circle class="chart-point order-chart-point" cx="${point.x}" cy="${point.y}" r="4"><title>${buckets[index].label}: ${buckets[index].value.toLocaleString()} orders</title></circle>`).join('');
-    const labelInterval = Math.ceil(buckets.length / 9);
-    const labels = points.map((point, index) => index % labelInterval === 0 || index === points.length - 1 ?
-        `<text class="chart-date-label" x="${point.x}" y="${height - 10}" text-anchor="middle">${escapeAdmin(buckets[index].label)}</text>` : '').join('');
-    const periodLabel = period === 'day' ? 'selected day' : period === 'month' ? 'selected month' : 'selected year';
+    const bars = buckets.map((bucket, index) => {
+        const x = left + slotWidth * index + (slotWidth - barWidth) / 2;
+        const barHeight = chartHeight * bucket.value / axisMax;
+        const y = top + chartHeight - barHeight;
+        return `<g>
+            <rect class="order-chart-bar" x="${x}" y="${y}" width="${barWidth}" height="${Math.max(1, barHeight)}" rx="3"><title>${escapeAdmin(bucket.label)}: ${bucket.value.toLocaleString()} orders and counter sales</title></rect>
+            ${buckets.length <= 12 ? `<text class="order-chart-value" x="${x + barWidth / 2}" y="${Math.max(top + 12, y - 7)}" text-anchor="middle">${bucket.value.toLocaleString()}</text>` : ''}
+        </g>`;
+    }).join('');
+    const labelInterval = period === 'year' ? 1 : Math.ceil(buckets.length / 8);
+    const labels = buckets.map((bucket, index) => index % labelInterval === 0 || index === buckets.length - 1 ?
+        `<text class="chart-date-label" x="${left + slotWidth * (index + 0.5)}" y="${height - 19}" text-anchor="middle">${escapeAdmin(bucket.label)}</text>` : '').join('');
+    const summary = total === 0
+        ? '<p class="daily-orders-empty">No orders or counter sales were recorded in this period.</p>'
+        : `<div class="daily-orders-summary" aria-label="Order summary">
+            <div><span>Total transactions</span><strong>${total.toLocaleString()}</strong></div>
+            ${period === 'day' ? '' : `<div><span>Busiest ${period === 'year' ? 'month' : 'day'}</span><strong>${escapeAdmin(peak.label)} · ${peak.value.toLocaleString()}</strong></div>`}
+        </div>`;
+    const note = period === 'year' ? 'Monthly totals · orders and counter sales' :
+        period === 'month' ? 'Daily totals · orders and counter sales' :
+        `Orders and counter sales · ${new Date(year, month - 1, day).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}`;
+    document.getElementById('dailyOrdersTitle').textContent = period === 'year' ? 'Monthly Order Trends' : 'Daily Order Trends';
+    document.getElementById('dailyOrdersPeriodNote').textContent = note;
 
-    target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="dailyOrdersSvgTitle dailyOrdersSvgDescription">
-        <title id="dailyOrdersSvgTitle">Customer orders by day for the ${periodLabel}</title>
-        <desc id="dailyOrdersSvgDescription">${buckets.map(bucket => `${bucket.label}: ${bucket.value.toLocaleString()} orders`).join('; ')}</desc>
-        ${gridLines}
-        <polyline class="revenue-line order-trend-line" points="${linePoints}"></polyline>
-        ${pointMarks}
-        ${labels}
-    </svg>`;
+    target.innerHTML = `${summary}
+        <div class="daily-orders-legend"><i aria-hidden="true"></i><span>Orders and counter sales</span></div>
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="dailyOrdersSvgTitle dailyOrdersSvgDescription">
+            <title id="dailyOrdersSvgTitle">Orders and counter sales ${period === 'year' ? 'by month' : 'by day'}</title>
+            <desc id="dailyOrdersSvgDescription">${buckets.map(bucket => `${bucket.label}: ${bucket.value.toLocaleString()} transactions`).join('; ')}</desc>
+            ${gridLines}
+            <text class="chart-axis-title" transform="translate(17 ${top + chartHeight / 2}) rotate(-90)" text-anchor="middle">Transactions</text>
+            ${bars}
+            ${labels}
+            <text class="chart-axis-title" x="${left + chartWidth / 2}" y="${height - 2}" text-anchor="middle">${period === 'year' ? 'Month' : 'Date'}</text>
+        </svg>`;
 }
 
 function renderDecisionSupport(data) {
@@ -1381,18 +1447,25 @@ function renderForecastTrendChart(dashboard, items, filters) {
         items.reduce((total, item) => total + item.result.interval.lowerError, 0))) : [];
     const upper = showRange ? forecast.map((value, index) => Math.max(lower[index], value +
         items.reduce((total, item) => total + item.result.interval.upperError, 0))) : [];
+    const historyTotal = history.reduce((total, value) => total + value, 0);
+    const forecastTotal = forecast.reduce((total, value) => total + value, 0);
     const maximum = Math.max(...history, ...forecast, ...upper, 1);
+    const rawStep = Math.max(1, maximum / 4);
+    const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+    const normalizedStep = rawStep / magnitude;
+    const step = (normalizedStep <= 1 ? 1 : normalizedStep <= 2 ? 2 : normalizedStep <= 5 ? 5 : 10) * magnitude;
+    const axisMaximum = step * 4;
     const width = 900;
     const height = 340;
     const left = 64;
     const right = 18;
     const top = 22;
-    const bottom = 54;
+    const bottom = 62;
     const chartWidth = width - left - right;
     const chartHeight = height - top - bottom;
     const count = history.length + forecast.length;
     const x = index => left + chartWidth * index / Math.max(count - 1, 1);
-    const y = value => top + chartHeight - chartHeight * value / maximum;
+    const y = value => top + chartHeight - chartHeight * value / axisMaximum;
     const historyPath = history.map((value, index) =>
         `${index ? 'L' : 'M'} ${x(index)} ${y(value)}`).join(' ');
     const forecastPath = [history[history.length - 1], ...forecast].map((value, index) => {
@@ -1406,31 +1479,54 @@ function renderForecastTrendChart(dashboard, items, filters) {
         const points = [`${x(history.length - 1)} ${y(history[history.length - 1])}`, ...upperPoints, ...lowerPoints].join(' ');
         range = `<polygon class="forecast-uncertainty" points="${points}"></polygon>`;
     }
+    const forecastBoundary = (x(history.length - 1) + x(history.length)) / 2;
+    const forecastRegion = `<rect class="forecast-region" x="${forecastBoundary}" y="${top}" width="${width - right - forecastBoundary}" height="${chartHeight}"></rect>`;
     const grid = Array.from({ length: 5 }, (_, index) => {
-        const value = maximum * (4 - index) / 4;
+        const value = axisMaximum * (4 - index) / 4;
         const lineY = top + chartHeight * index / 4;
         return `<g><line class="forecast-grid-line" x1="${left}" y1="${lineY}" x2="${width - right}" y2="${lineY}"></line><text class="forecast-axis-label" x="${left - 8}" y="${lineY + 4}" text-anchor="end">${forecastNumber(value, 0)}</text></g>`;
     }).join('');
+    const dateAtPoint = pointIndex => {
+        if (pointIndex < dashboard.dates.length) {
+            const date = dashboard.dates[pointIndex];
+            return typeof date === 'string' ? date : date.toISOString().slice(0, 10);
+        }
+        const date = new Date(`${dashboard.asOf}T00:00:00Z`);
+        date.setUTCDate(date.getUTCDate() + pointIndex - dashboard.dates.length + 1);
+        return date.toISOString().slice(0, 10);
+    };
+    const actualPoints = history.map((value, index) =>
+        `<circle class="forecast-point forecast-actual-point" cx="${x(index)}" cy="${y(value)}" r="2.5"><title>${dateAtPoint(index)} · Actual sales: ${forecastNumber(value, 1)} units</title></circle>`).join('');
+    const predictedPoints = forecast.map((value, index) => {
+        const pointIndex = history.length + index;
+        return `<circle class="forecast-point forecast-predicted-point" cx="${x(pointIndex)}" cy="${y(value)}" r="3"><title>${dateAtPoint(pointIndex)} · Predicted demand: ${forecastNumber(value, 1)} units</title></circle>`;
+    }).join('');
     const labels = Array.from({ length: 6 }, (_, index) => {
         const pointIndex = Math.round((count - 1) * index / 5);
-        const dateIndex = Math.min(pointIndex, dashboard.dates.length - 1);
-        const date = pointIndex < dashboard.dates.length ? dashboard.dates[dateIndex] :
-            new Date(`${dashboard.asOf}T00:00:00Z`);
-        if (pointIndex >= dashboard.dates.length) date.setUTCDate(date.getUTCDate() + pointIndex - dashboard.dates.length + 1);
-        const text = typeof date === 'string' ? date.slice(5) : date.toISOString().slice(5, 10);
-        return `<text class="forecast-axis-label" x="${x(pointIndex)}" y="${height - 20}" text-anchor="middle">${text}</text>`;
+        return `<text class="forecast-axis-label" x="${x(pointIndex)}" y="${height - 25}" text-anchor="middle">${dateAtPoint(pointIndex).slice(5)}</text>`;
     }).join('');
     const title = filters.productId === 'all' ? 'Combined product demand' :
         items[0].product.product_name;
-    target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeAdmin(title)} historical sales and forecast">
-        <text class="forecast-axis-label" x="18" y="${height / 2}" text-anchor="middle" transform="rotate(-90 18 ${height / 2})">Units</text>
-        ${grid}${range}
+    target.innerHTML = `<div class="forecast-chart-summary">
+        <div><span>Actual units · ${filters.days} days</span><strong>${forecastNumber(historyTotal, 0)}</strong></div>
+        <div><span>Forecast units · ${filters.horizon} days</span><strong>${forecastNumber(forecastTotal, 0)}</strong></div>
+    </div>
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="forecastTrendSvgTitle forecastTrendSvgDescription">
+        <title id="forecastTrendSvgTitle">${escapeAdmin(title)} historical sales and demand forecast</title>
+        <desc id="forecastTrendSvgDescription">Actual daily sales for ${filters.days} days followed by predicted demand for ${filters.horizon} days.</desc>
+        <text class="forecast-axis-label" x="18" y="${height / 2}" text-anchor="middle" transform="rotate(-90 18 ${height / 2})">Units sold</text>
+        ${forecastRegion}${grid}${range}
+        <line class="forecast-boundary" x1="${forecastBoundary}" y1="${top}" x2="${forecastBoundary}" y2="${top + chartHeight}"></line>
+        <text class="forecast-region-label" x="${left + 8}" y="${top + 14}">Actual</text>
+        <text class="forecast-region-label" x="${forecastBoundary + 8}" y="${top + 14}">Forecast</text>
         <path class="forecast-history-line" d="${historyPath}"></path>
         <path class="forecast-prediction-line" d="${forecastPath}"></path>
+        ${actualPoints}${predictedPoints}
         ${labels}
+        <text class="forecast-axis-label" x="${left + chartWidth / 2}" y="${height - 3}" text-anchor="middle">Date</text>
     </svg>
-    <div class="forecast-legend"><span><i class="forecast-legend-actual"></i>Actual sales</span><span><i class="forecast-legend-predicted"></i>Predicted demand</span>${showRange ? '<span><i class="forecast-legend-range"></i>Backtest residual range</span>' : ''}</div>
-    <p class="forecast-chart-note">${showRange ? 'Shaded range uses observed rolling-backtest residuals (10th–90th percentiles); it is not a guaranteed confidence interval.' : 'Uncertainty range hidden because the selected model has fewer than 21 out-of-sample residuals across 3 validation folds.'}</p>`;
+    <div class="forecast-legend"><span><i class="forecast-legend-actual"></i>Actual sales</span><span><i class="forecast-legend-predicted"></i>Predicted demand</span>${showRange ? '<span><i class="forecast-legend-range"></i>Estimated range</span>' : ''}</div>
+    <p class="forecast-chart-note">${showRange ? 'The shaded area shows the range of errors seen during model checks. It is an estimate, not a guarantee.' : 'The estimated range is hidden because there is not enough past model-check data.'}</p>`;
 }
 
 function renderForecastModelComparison(items) {
