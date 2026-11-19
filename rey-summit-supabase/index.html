@@ -4,14 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rey Summit Ordering System</title>
-    <script>window.location.replace('Customer_Login.html');</script>
-    <noscript><meta http-equiv="refresh" content="0;url=Customer_Login.html"></noscript>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-api.js"></script>
     <style>body { background: #eef6f5; }</style>
 </head>
 <body>
+    <p id="entryMessage">Checking your sign-in…</p>
     <noscript>
         <p><a href="Customer_Login.html">Customer ordering</a> ·
            <a href="Admin_login.html">Company portal (admin and staff)</a></p>
     </noscript>
+    <script>
+        (async () => {
+            const { data } = await rsmSupabase.auth.getSession();
+            if (!data.session) {
+                window.location.replace('Customer_Login.html');
+                return;
+            }
+
+            const { data: who } = await rsmSupabase.rpc('rsm_whoami');
+            if (who?.type === 'admin') {
+                window.location.replace('admin_dashboard.html');
+            } else if (who?.type === 'staff') {
+                window.location.replace(who.role === 'sales' ? 'sales_staff.html' : 'delivery_staff.html');
+            } else {
+                window.location.replace('customer_ordering.html');
+            }
+        })().catch(() => {
+            window.location.replace('Customer_Login.html');
+        });
+    </script>
 </body>
 </html>

@@ -14,6 +14,7 @@
         },
     });
     window.rsmSupabase = sb;
+    const authReady = sb.auth.getSession().catch(() => ({ data: { session: null }, error: new Error('Auth initialization failed') }));
 
     const BRANCHES = ['Alangilan', 'Sta Teresita', 'Mabini Lipa', 'San Luis'];
     const BRANCH_KEY = 'rsm_admin_branch';
@@ -60,6 +61,7 @@
     }
 
     async function hasSession() {
+        await authReady;
         for (let attempt = 0; attempt < 2; attempt++) {
             const { data, error } = await sb.auth.getSession();
             if (!error && data.session) {
@@ -448,6 +450,7 @@
     };
 
     window.rsmApi = async function (url, options) {
+        await authReady;
         const u = new URL(url, location.href);
         const name = u.pathname.split('/').pop();
         const handler = routes[name];
