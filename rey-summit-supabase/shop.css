@@ -1,17 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Finlandica+Headline:ital,wght@0,100..900;1,100..900&display=swap');
 
 :root{
-    --teal-dark:   #087f78;
-    --teal-mid:    #19b6a0;
-    --blue-mid:    #1aa7c1;
-    --blue-deep:   #168fc2;
-    --ink:         #1c3b3a;
-    --muted:       #5c7876;
-    --card-bg:     #ffffff;
-    --page-bg:     #eef7f6;
-    --line:        #e1eeec;
+    --summit-blue: #087EBB;
+    --deep-navy:   #0C2D4A;
+    --glacier:     #E3F6FD;
+    --pure-white:  #FFFFFF;
+    --slate:       #647B8D;
+    --teal-dark:   var(--deep-navy);
+    --teal-mid:    var(--summit-blue);
+    --blue-mid:    var(--summit-blue);
+    --blue-deep:   var(--deep-navy);
+    --ink:         var(--deep-navy);
+    --muted:       var(--slate);
+    --card-bg:     var(--pure-white);
+    --page-bg:     var(--glacier);
+    --line:        #C9DCE7;
     --success:     #1fa672;
-    --warn:        #d98a10;
+    --warn:        #647B8D;
     --danger:      #c0392b;
     --radius-lg:   20px;
     --radius-md:   14px;
@@ -23,7 +28,7 @@
 
 body.shop-body{
     min-height:100vh;
-    background: linear-gradient(180deg, #e7f7f4 0%, #eef7f6 220px, #eef7f6 100%);
+    background: #E3F6FD;
     color: var(--ink);
     padding-bottom: 40px;
 }
@@ -38,7 +43,7 @@ body.shop-body{
     justify-content:space-between;
     gap:16px;
     padding: 16px clamp(16px, 4vw, 48px);
-    background: linear-gradient(135deg, #19b6a0 0%, #1aa7c1 55%, #168fc2 100%);
+    background: #087EBB;
     color:#fff;
     box-shadow: 0 6px 20px rgba(8, 90, 110, .18);
 }
@@ -129,7 +134,7 @@ body.shop-body{
     border-color: var(--teal-mid); color: var(--teal-dark); transform: translateY(-1px);
 }
 .category-chips button.active{
-    background: linear-gradient(135deg, var(--teal-mid), var(--blue-mid));
+    background: var(--summit-blue);
     color:#fff; border-color:transparent;
     box-shadow: 0 8px 18px rgba(20,150,170,.28);
 }
@@ -158,9 +163,7 @@ body.shop-body{
 .product-thumb{
     position:relative;
     height:180px;
-    background:
-        linear-gradient(rgba(216, 243, 238, .28), rgba(205, 234, 245, .28)),
-        url('images/ice-cubes-background-ice-cube-texture-ice-wallpaper-it-makes-me-feel-fresh-and-feel-good-in-the-summer-ice-photo.jpg') center / cover;
+    background: rgba(227, 246, 253, .28) url('images/ice-cubes-background-ice-cube-texture-ice-wallpaper-it-makes-me-feel-fresh-and-feel-good-in-the-summer-ice-photo.jpg') center / cover;
     display:flex; align-items:center; justify-content:center;
 }
 .product-thumb .product-image{
@@ -216,7 +219,7 @@ body.shop-body{
 
 .add-btn{
     margin-top:10px; padding:11px; border:0; border-radius:999px;
-    background: linear-gradient(135deg, var(--teal-dark), var(--teal-mid)); color:#fff; font-weight:700;
+    background: var(--summit-blue); color:#fff; font-weight:700;
     font-size:.92rem; cursor:pointer; letter-spacing:.01em;
     box-shadow: 0 8px 16px rgba(8,127,120,.22);
     transition: all .2s ease;
@@ -241,7 +244,7 @@ body.shop-body{
 .cart-panel h2 #cartCount{
     display:inline-flex; align-items:center; justify-content:center;
     min-width:22px; height:22px; padding:0 6px; margin-left:6px;
-    background: linear-gradient(135deg, var(--teal-mid), var(--blue-mid)); color:#fff;
+    background: var(--summit-blue); color:#fff;
     font-size:.72rem; font-weight:700;
     border-radius:999px; vertical-align:middle;
 }
@@ -267,7 +270,7 @@ body.shop-body{
 
 .checkout-btn{
     width:100%; margin-top:14px; padding:13px; border:0; border-radius:999px;
-    background: linear-gradient(135deg, #19b6a0, #1aa7c1); color:#fff; font-weight:700;
+    background: #087EBB; color:#fff; font-weight:700;
     font-size:1rem; cursor:pointer; box-shadow: 0 10px 20px rgba(20,150,170,.28);
     transition: all 0.3s ease;
 }
@@ -281,7 +284,7 @@ body.shop-body{
 .mobile-cart-bar{
     display:none;
     position:fixed; left:12px; right:12px; bottom:12px; z-index:40;
-    background: linear-gradient(135deg, #19b6a0, #1aa7c1);
+    background: #087EBB;
     color:#fff; border-radius:999px; padding:12px 18px;
     align-items:center; justify-content:space-between;
     box-shadow: 0 12px 26px rgba(8,90,110,.34);
@@ -320,7 +323,7 @@ body.shop-body{
 }
 .modal-card textarea{ min-height:70px; resize:vertical; }
 .modal-card input[readonly], .modal-card textarea[readonly]{
-    background:#eef7f6; color:var(--ink); cursor:default;
+    background:#E3F6FD; color:var(--ink); cursor:default;
 }
 .modal-actions{ display:flex; gap:10px; margin-top:18px; flex-shrink:0; }
 .modal-actions button{ flex:1; padding:12px; border-radius:999px; border:0; cursor:pointer; font-weight:600; transition: all 0.3s ease; }
@@ -460,7 +463,11 @@ body.shop-body{
     text-decoration:none;
     white-space:nowrap;
 }
+.history-item button.history-track{ border:0; font:inherit; font-size:.78rem; cursor:pointer; }
+.history-item button.history-track:disabled{ opacity:.65; cursor:wait; }
 .history-track:hover{ background:var(--teal-mid); }
+.history-receipt-toolbar{ display:flex; justify-content:flex-start; margin:0 0 16px; }
+.history-receipt{ margin:0 0 30px; }
 
 .account-shell{
     max-width:760px;
@@ -483,7 +490,7 @@ body.shop-body{
     border-radius:var(--radius-sm); background:#f8fdfc; color:var(--ink); font-size:1rem;
 }
 .account-form textarea{ min-height:96px; resize:vertical; }
-.account-form input[readonly]{ background:#eef7f6; }
+.account-form input[readonly]{ background:#E3F6FD; }
 .account-save{
     justify-self:start; margin-top:12px; padding:12px 20px; border:0;
     border-radius:999px; background:var(--teal-dark); color:#fff;
@@ -576,11 +583,7 @@ body.shop-body{
     background:#fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
     padding: 22px; position:relative; overflow:hidden;
 }
-.ship-card::before{
-    content:''; position:absolute; top:0; right:0; width:70px; height:100%;
-    background: repeating-linear-gradient(180deg, transparent 0 8px, var(--page-bg) 8px 9px);
-    opacity:.5;
-}
+
 .ship-carrier{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
 .ship-carrier .carrier-name{ font-weight:700; color:var(--blue-deep); letter-spacing:.03em; }
 .ship-id{ font-size:.75rem; color:var(--muted); margin-bottom:18px; }
@@ -613,7 +616,7 @@ body.shop-body{
     height:100%;
     width:0;
     border-radius:inherit;
-    background:linear-gradient(90deg, var(--teal-dark), var(--blue-mid));
+    background: var(--summit-blue);
     transition:width 1.15s cubic-bezier(.22,.8,.25,1);
 }
 .route-line span::after{
@@ -621,7 +624,7 @@ body.shop-body{
     position:absolute;
     inset:-5px auto -5px -35%;
     width:32%;
-    background:linear-gradient(90deg, transparent, rgba(255,255,255,.9), transparent);
+    background: rgba(255,255,255,.9);
     transform:skewX(-25deg);
     animation:route-shimmer 2.2s ease-in-out infinite;
 }
@@ -708,7 +711,7 @@ body.shop-body{
         box-shadow: var(--shadow-card); margin-top:16px;
     }
     .mobile-stepper .ms-head{
-        background: linear-gradient(135deg, #19b6a0, #1aa7c1);
+        background: #087EBB;
         color:#fff; padding:18px 20px 26px; font-weight:700; font-size:1.05rem;
         display:flex; align-items:center; gap:10px;
     }
@@ -754,9 +757,16 @@ body.shop-body{
     overflow:hidden; margin: 0 auto 24px; width:100%; max-width: 620px;
 }
 .receipt-head{
-    background: linear-gradient(135deg, #19b6a0, #1aa7c1); color:#fff;
+    background: #087EBB; color:#fff;
     padding:16px 20px; font-weight:700; display:flex; align-items:center; gap:8px;
 }
+.tracking-receipt{ margin:22px 0 30px; }
+.tracking-receipt .receipt-head{ justify-content:space-between; }
+.tracking-receipt-close{
+    padding:7px 12px; border:1px solid rgba(255,255,255,.65); border-radius:999px;
+    background:transparent; color:#fff; font:inherit; font-size:.8rem; cursor:pointer;
+}
+.tracking-receipt-close:hover{ background:rgba(255,255,255,.16); }
 .receipt-body{ padding: 18px 20px 20px; }
 .receipt-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:9px 0; border-bottom:1px dashed var(--line); font-size:.86rem; }
 .receipt-row:last-child{ border-bottom:0; }
@@ -817,7 +827,7 @@ body.shop-body{
 .left-sidebar{
     display: none;
     flex-direction: column;
-    background: linear-gradient(135deg, #19b6a0 0%, #1aa7c1 55%, #168fc2 100%);
+    background: #087EBB;
     color: #fff;
     padding: 20px 16px;
     height: calc(100vh - 86px);

@@ -1,4 +1,14 @@
 const adminMoney = value => `₱${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const branchPalette = {
+    'Alangilan': '#087EBB',
+    'Sta Teresita': '#0C2D4A',
+    'Mabini Lipa': '#55A98F',
+    'San Luis': '#647B8D'
+};
+const branchColor = (name, index = 0) =>
+    Object.prototype.hasOwnProperty.call(branchPalette, name)
+        ? branchPalette[name]
+        : ['#087EBB', '#0C2D4A', '#55A98F', '#647B8D'][index % 4];
 const adminStatuses = {
     pending: 'Pending',
     confirmed: 'Confirmed',
@@ -862,7 +872,6 @@ function renderBranchSalesChart(rows) {
     const bottom = 54;
     const chartWidth = width - left - right;
     const chartHeight = height - top - bottom;
-    const colors = ['#087f78', '#1aa7c1', '#d98a10', '#5572d8'];
     const gridLines = Array.from({ length: 4 }, (_, index) => {
         const value = axisMax - (step * index);
         const y = top + (chartHeight * index / 3);
@@ -875,7 +884,7 @@ function renderBranchSalesChart(rows) {
         const barHeight = chartHeight * branch.revenue / axisMax;
         const y = top + chartHeight - barHeight;
         return `<g>
-            <rect x="${center - barWidth / 2}" y="${y}" width="${barWidth}" height="${barHeight}" rx="5" fill="${colors[index % colors.length]}"><title>${escapeAdmin(branch.name)}: ${adminMoney(branch.revenue)}</title></rect>
+            <rect x="${center - barWidth / 2}" y="${y}" width="${barWidth}" height="${barHeight}" rx="5" fill="${branchColor(branch.name, index)}"><title>${escapeAdmin(branch.name)}: ${adminMoney(branch.revenue)}</title></rect>
             <text class="branch-sales-value" x="${center}" y="${Math.max(top + 12, y - 9)}" text-anchor="middle">${adminMoney(branch.revenue)}</text>
             <text class="chart-date-label" x="${center}" y="${height - 18}" text-anchor="middle">${escapeAdmin(branch.name)}</text>
         </g>`;
@@ -913,17 +922,18 @@ function renderInventoryStockChart(products) {
             .map(branch => [branch.name, Number(branch.stock_qty || 0)]));
         return `<tr>
             <th scope="row">${escapeAdmin(product.product_name)}</th>
-            ${branches.map(branch => {
+            ${branches.map((branch, branchIndex) => {
                 const quantity = stocks.get(branch.name) || 0;
                 const isLow = quantity <= overviewLowStockThreshold;
                 const percent = Math.round((quantity / maxStock) * 100);
+                const color = branchColor(branch.name, branchIndex);
                 return `<td>
                     <div class="stock-level${isLow ? ' is-low' : ''}">
                         <strong>${quantity.toLocaleString()} units</strong>
                         ${isLow ? '<span class="stock-warning">Low stock</span>' : ''}
                     </div>
                     <div class="stock-level-track" role="img" aria-label="${escapeAdmin(product.product_name)} at ${escapeAdmin(branch.name)}: ${quantity.toLocaleString()} units; warning threshold ${overviewLowStockThreshold}">
-                        <i style="width:${percent}%"></i>
+                        <i style="width:${percent}%;background:${color}"></i>
                     </div>
                 </td>`;
             }).join('')}
@@ -932,7 +942,9 @@ function renderInventoryStockChart(products) {
 
     target.innerHTML = `<div class="inventory-stock-scroll">
         <table class="inventory-stock-table">
-            <thead><tr><th scope="col">Product</th>${branches.map(branch => `<th scope="col">${escapeAdmin(branch.name)}</th>`).join('')}</tr></thead>
+            <thead><tr><th scope="col">Product</th>${branches.map((branch, branchIndex) => {
+                return `<th scope="col"><span class="inventory-branch-label"><i style="background:${branchColor(branch.name, branchIndex)}"></i>${escapeAdmin(branch.name)}</span></th>`;
+            }).join('')}</tr></thead>
             <tbody>${rows}</tbody>
         </table>
     </div>`;
@@ -1177,10 +1189,10 @@ function renderRevenueChart(rows, period, selectedDate) {
 function renderOrderStatusChart(rows, period) {
     const target = document.getElementById('orderStatusChart');
     const statusOrder = [
-        ['pending', 'Pending', '#078778'],
+        ['pending', 'Pending', '#dbe72c'],
         ['confirmed', 'Confirmed', '#23a996'],
         ['preparing', 'Preparing', '#f2a532'],
-        ['out_for_delivery', 'Out for delivery', '#168fc2'],
+        ['out_for_delivery', 'Out for delivery', '#1ea0d8'],
         ['completed', 'Delivered', '#5572d8'],
         ['cancelled', 'Cancelled', '#c0392b'],
     ];
@@ -2178,7 +2190,7 @@ function renderBranchComparison(branchData) {
         return;
     }
     const highestRevenue = Math.max(...branches.map(branch => branch.revenue), 0);
-    document.getElementById('branchComparison').innerHTML = `<div class="comparison-table"><div class="comparison-row comparison-heading"><span>Branch</span><span>Revenue</span><span>Orders</span><span>Fulfillment</span><span>Score</span></div>${branches.map((branch, index) => `<div class="comparison-row"><span class="branch-name"><b class="rank">${index + 1}</b>${escapeAdmin(branch.name)}</span><span>${adminMoney(branch.revenue)}<i class="mini-bar"><em style="width:${highestRevenue ? Math.round((branch.revenue / highestRevenue) * 100) : 0}%"></em></i></span><span>${branch.orders}</span><span>${branch.fulfillment}%</span><strong>${branch.score}</strong></div>`).join('')}</div><div class="comparison-summary"><span><b>Top branch</b> ${escapeAdmin(branches[0].name)}</span><span><b>Needs attention</b> ${escapeAdmin(branches[branches.length - 1].name)} · ${branches[branches.length - 1].open} open deliveries</span></div>`;
+    document.getElementById('branchComparison').innerHTML = `<div class="comparison-table"><div class="comparison-row comparison-heading"><span>Branch</span><span>Revenue</span><span>Orders</span><span>Fulfillment</span><span>Score</span></div>${branches.map((branch, index) => `<div class="comparison-row"><span class="branch-name"><b class="rank">${index + 1}</b>${escapeAdmin(branch.name)}</span><span>${adminMoney(branch.revenue)}<i class="mini-bar"><em style="width:${highestRevenue ? Math.round((branch.revenue / highestRevenue) * 100) : 0}%;background:${branchColor(branch.name, index)}"></em></i></span><span>${branch.orders}</span><span>${branch.fulfillment}%</span><strong>${branch.score}</strong></div>`).join('')}</div><div class="comparison-summary"><span><b>Top branch</b> ${escapeAdmin(branches[0].name)}</span><span><b>Needs attention</b> ${escapeAdmin(branches[branches.length - 1].name)} · ${branches[branches.length - 1].open} open deliveries</span></div>`;
 }
 
 function renderPerformanceCharts(branchData, monthlySales, date) {
@@ -2215,7 +2227,6 @@ function renderPerformanceBarChart(targetId, branches, metric, formatValue, titl
     const bottom = 58;
     const chartWidth = width - left - right;
     const chartHeight = height - top - bottom;
-    const colors = ['#087f78', '#1aa7c1', '#d98a10', '#5572d8'];
     const grid = Array.from({ length: 5 }, (_, index) => {
         const value = axisMaximum - (step * index);
         const y = top + (chartHeight * index / 4);
@@ -2228,7 +2239,7 @@ function renderPerformanceBarChart(targetId, branches, metric, formatValue, titl
         const barHeight = chartHeight * branch[metric] / axisMaximum;
         const y = top + chartHeight - barHeight;
         return `<g>
-            <rect x="${center - barWidth / 2}" y="${y}" width="${barWidth}" height="${barHeight}" rx="5" fill="${colors[index % colors.length]}"><title>${escapeAdmin(branch.name)}: ${formatValue(branch[metric])}</title></rect>
+            <rect x="${center - barWidth / 2}" y="${y}" width="${barWidth}" height="${barHeight}" rx="5" fill="${branchColor(branch.name, index)}"><title>${escapeAdmin(branch.name)}: ${formatValue(branch[metric])}</title></rect>
             <text class="branch-sales-value" x="${center}" y="${Math.max(top + 12, y - 9)}" text-anchor="middle">${formatValue(branch[metric])}</text>
             <text class="chart-date-label" x="${center}" y="${height - 18}" text-anchor="middle">${escapeAdmin(branch.name)}</text>
         </g>`;
@@ -2252,7 +2263,7 @@ function renderMonthlySalesChart(monthlySales, branches, year) {
 
     const series = branchNames.map((name, branchIndex) => ({
         name,
-        color: ['#087f78', '#1aa7c1', '#d98a10', '#5572d8'][branchIndex % 4],
+        color: branchColor(name, branchIndex),
         values: Array(12).fill(0)
     }));
     const seriesByName = new Map(series.map(item => [item.name, item]));

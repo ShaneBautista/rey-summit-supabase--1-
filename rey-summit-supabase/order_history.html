@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Order History — Rey Summit</title>
-<link rel="stylesheet" href="shop.css?v=8">
+<link rel="stylesheet" href="shop.css?v=9">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-api.js"></script>
@@ -49,11 +49,32 @@
     </aside>
 
     <main class="history-shell">
-        <p class="eyebrow">History</p>
-        <h1>This is your orders, <span id="customerUsername"></span></h1>
-        <p class="history-intro">Review previous orders and follow their delivery status.</p>
-        <div id="historyMessage" class="loading-state">Loading order history...</div>
-        <div id="historyList" class="history-list"></div>
+        <section id="historyContent">
+            <p class="eyebrow">History</p>
+            <h1>This is your orders, <span id="customerUsername"></span></h1>
+            <p class="history-intro">Review previous orders and follow their delivery status.</p>
+            <div id="historyMessage" class="loading-state">Loading order history...</div>
+            <div id="historyList" class="history-list"></div>
+        </section>
+
+        <section id="historyReceiptView" style="display:none;" aria-labelledby="historyReceiptTitle">
+            <div class="history-receipt-toolbar">
+                <button type="button" class="history-track" id="backToHistory">Back to history</button>
+            </div>
+            <div id="historyReceiptError" class="error-state" style="display:none;" role="alert"></div>
+            <div class="receipt-card history-receipt" id="historyReceipt" style="display:none;">
+                <div class="receipt-head" id="historyReceiptTitle">🧾 E-Receipt</div>
+                <div class="receipt-body">
+                    <div class="receipt-row"><span class="r-label">Order ID</span><span id="historyReceiptOrderId">—</span></div>
+                    <div class="receipt-row"><span class="r-label">Order Date</span><span id="historyReceiptDate">—</span></div>
+                    <div class="receipt-row"><span class="r-label">Status</span><span id="historyReceiptStatus">—</span></div>
+                    <div class="receipt-row" id="historyDeliveredByRow" style="display:none;"><span class="r-label">Delivered by</span><span id="historyDeliveredBy">—</span></div>
+                    <div class="receipt-row"><span class="r-label">Delivery Address</span><span id="historyReceiptAddress">—</span></div>
+                    <div class="receipt-items" id="historyReceiptItems"></div>
+                    <div class="receipt-total"><span>Total</span><span id="historyReceiptTotal">—</span></div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Customer navigation">
@@ -91,6 +112,6 @@
     </div>
 
     <script src="customer_logout.js?v=1"></script>
-    <script src="order_history.js?v=5"></script>
+    <script src="order_history.js?v=6"></script>
 </body>
 </html>

@@ -1,17 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 :root {
-    --ink: #1c3b3a;
-    --muted: #5c7876;
-    --line: #e1eeec;
-    --paper: #eef7f6;
-    --white: #fff;
-    --teal-dark: #087f78;
-    --teal: #19b6a0;
-    --blue-mid: #1aa7c1;
-    --blue-deep: #168fc2;
-    --amber: #d98a10;
-    --coral: #c0392b;
+    --summit-blue: #087EBB;
+    --deep-navy: #0C2D4A;
+    --glacier: #E3F6FD;
+    --pure-white: #FFFFFF;
+    --slate: #647B8D;
+    --ink: var(--deep-navy);
+    --muted: var(--slate);
+    --line: #C9DCE7;
+    --paper: var(--glacier);
+    --white: var(--pure-white);
+    --teal-dark: var(--deep-navy);
+    --teal: var(--summit-blue);
+    --blue-mid: var(--summit-blue);
+    --blue-deep: var(--deep-navy);
+    --amber: #647B8D;
+    --coral: #647B8D;
     --shadow: 0 10px 30px rgba(8, 60, 66, .10);
 }
 
@@ -21,7 +26,7 @@
 
 body {
     margin: 0;
-    background: linear-gradient(180deg, #e7f7f4 0%, #eef7f6 220px, #eef7f6 100%);
+    background: #E3F6FD;
     color: var(--ink);
     font-family: 'DM Sans', sans-serif;
 }
@@ -31,7 +36,7 @@ body:before {
     position: fixed;
     inset: 0 0 auto;
     height: 5px;
-    background: linear-gradient(90deg, var(--teal), var(--blue-mid), var(--blue-deep));
+    background: var(--summit-blue);
     z-index: 3;
 }
 
@@ -43,7 +48,7 @@ body:before {
 }
 
 aside {
-    background: linear-gradient(180deg, var(--teal) 0%, var(--blue-mid) 55%, var(--blue-deep) 100%);
+    background: var(--summit-blue);
     color: #fff;
     padding: 30px 20px;
     display: flex;
@@ -364,7 +369,7 @@ h3 {
 }
 
 .forecast-legend .forecast-legend-predicted {
-    background: repeating-linear-gradient(90deg, var(--blue-deep) 0 7px, transparent 7px 11px);
+    background: var(--blue-deep);
 }
 
 .forecast-legend .forecast-legend-range {
@@ -414,7 +419,7 @@ h3 {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, var(--teal), var(--blue-mid));
+    background: var(--summit-blue);
 }
 
 .forecast-inventory-table {
@@ -646,7 +651,7 @@ th:last-child {
     position: fixed;
     right: 22px;
     bottom: 22px;
-    background: linear-gradient(135deg, var(--teal) 0%, var(--blue-mid) 100%);
+    background: var(--summit-blue);
     color: #fff;
     padding: 13px 16px;
     border-radius: 7px;
@@ -994,7 +999,7 @@ th:last-child {
     width: 9px;
     height: 9px;
     border-radius: 50%;
-    background: #c0392b;
+    background: #647B8D;
 }
 
 .inventory-stock-scroll {
@@ -1013,6 +1018,20 @@ th:last-child {
 
 .inventory-stock-table th:first-child {
     min-width: 150px;
+}
+
+.inventory-branch-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.inventory-branch-label i {
+    width: 9px;
+    height: 9px;
+    flex: 0 0 auto;
+    border: 1px solid var(--line);
+    border-radius: 2px;
 }
 
 .inventory-stock-table tbody th {
@@ -1071,10 +1090,6 @@ th:last-child {
     height: 100%;
     border-radius: inherit;
     background: var(--teal-dark);
-}
-
-.stock-level.is-low + .stock-level-track i {
-    background: #c0392b;
 }
 
 .analytics-card {
@@ -1197,7 +1212,7 @@ th:last-child {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, var(--teal-dark), var(--teal));
+    background: var(--summit-blue);
 }
 
 .operations-panel {

@@ -25,9 +25,35 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('shipRefreshBtn').addEventListener('click', () => {
         if (orderId) loadOrder(orderId);
     });
+    document.getElementById('shipReceiptLink').addEventListener('click', () => {
+        const receipt = document.getElementById('trackingReceipt');
+        receipt.style.display = 'block';
+        receipt.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.getElementById('closeTrackingReceipt').addEventListener('click', () => {
+        document.getElementById('trackingReceipt').style.display = 'none';
+        document.getElementById('trackingWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
     if (orderId) {
         loadOrder(orderId);
+        const channel = window.rsmSupabase
+            .channel(`tracking-order-${orderId}`)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'orders',
+                filter: `order_id=eq.${orderId}`
+            }, () => loadOrder(orderId))
+            .subscribe((status) => {
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                    console.error('Order tracking realtime subscription failed:', status);
+                }
+            });
+
+        window.addEventListener('beforeunload', () => {
+            window.rsmSupabase.removeChannel(channel);
+        }, { once: true });
     } else {
         loadMyOrders();
     }
@@ -111,6 +137,7 @@ async function loadOrder(orderId) {
         }
 
         renderShipCard(data.order);
+        renderTrackingReceipt(data.order, data.items || []);
         renderTimeline(data.order);
         renderMobileStepper(data.order);
         wrap.classList.add('ready');
@@ -142,7 +169,6 @@ function renderShipCard(order) {
     document.getElementById('shipCustomer').textContent = order.username;
     document.getElementById('shipAddress').textContent = order.delivery_address;
     document.getElementById('shipTotal').textContent = money(order.total_amount);
-    document.getElementById('shipReceiptLink').href = `order_confirmation.html?order_id=${order.order_id}`;
     document.getElementById('routeProgress').style.width = `${progress}%`;
     document.getElementById('routeRunner').dataset.status = order.order_status;
     document.getElementById('routeCaption').textContent = order.order_status === 'cancelled'
@@ -153,6 +179,31 @@ function renderShipCard(order) {
 
     document.getElementById('shipStatusBig').style.color =
         order.order_status === 'cancelled' ? 'var(--danger)' : 'var(--ink)';
+}
+
+function renderTrackingReceipt(order, items) {
+    document.getElementById('trackingReceiptOrderId').textContent =
+        '#' + String(order.order_id).padStart(6, '0');
+    document.getElementById('trackingReceiptDate').textContent = formatDate(order.order_date);
+    document.getElementById('trackingReceiptStatus').textContent = statusLabel(order.order_status);
+    document.getElementById('trackingReceiptAddress').textContent = order.delivery_address || '—';
+    document.getElementById('trackingReceiptTotal').textContent = money(order.total_amount);
+
+    const deliveredByName = order.delivered_by_name || '';
+    document.getElementById('trackingDeliveredByRow').style.display =
+        order.order_status === 'completed' && deliveredByName ? 'flex' : 'none';
+    document.getElementById('trackingDeliveredBy').textContent = deliveredByName;
+    document.getElementById('trackingReceiptItems').innerHTML = items.map(item => `
+        <div class="receipt-item">
+            <span class="ri-name">${escapeHtml(item.product_name)} <span class="ri-qty">× ${escapeHtml(item.quantity)}</span></span>
+            <span>${money(item.subtotal)}</span>
+        </div>`).join('');
+}
+
+function escapeHtml(value) {
+    const element = document.createElement('span');
+    element.textContent = value == null ? '' : String(value);
+    return element.innerHTML;
 }
 
 function currentIndex(status) {

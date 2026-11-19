@@ -1,5 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Finlandica+Headline:ital,wght@0,100..900;1,100..900&display=swap');
 
+:root{
+    --summit-blue: #087EBB;
+    --deep-navy: #0C2D4A;
+    --glacier: #E3F6FD;
+    --pure-white: #FFFFFF;
+    --slate: #647B8D;
+}
+
 *{
     margin:0;
     padding:0;
@@ -20,7 +28,7 @@ body{
 body:has(.login-container){
     position: relative;
     overflow-x: hidden;
-    background: linear-gradient(135deg, #19b6a0 0%, #1aa7c1 52%, #168fc2 100%);
+    background: var(--summit-blue);
 }
 
 body:has(.login-container)::before,
@@ -81,7 +89,7 @@ body:has(.login-container)::after{
 .login-container h2{
     margin-bottom: 22px;
     text-align: center;
-    color: #087f78;
+    color: var(--deep-navy);
     font-size: 2rem;
     font-weight: 500;
 }
@@ -282,7 +290,7 @@ body:has(.login-container)::after{
 }
 
 .login-container a{
-    color: #087f78;
+    color: var(--deep-navy);
 }
 
 .register-container{
