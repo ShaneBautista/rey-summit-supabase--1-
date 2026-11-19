@@ -18,27 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
     loadAccountDetails();
     wireModals();
-    wireLogoutConfirmation();
 });
-
-function wireLogoutConfirmation() {
-    const logoutTrigger = document.getElementById('logoutTrigger');
-    const logoutModal = document.getElementById('logoutModal');
-    const cancelLogout = document.getElementById('cancelLogout');
-
-    if (!logoutTrigger || !logoutModal) return;
-
-    const closeLogoutModal = () => logoutModal.classList.remove('open');
-
-    logoutTrigger.addEventListener('click', () => logoutModal.classList.add('open'));
-    cancelLogout?.addEventListener('click', closeLogoutModal);
-    logoutModal.addEventListener('click', (event) => {
-        if (event.target === logoutModal) closeLogoutModal();
-    });
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && logoutModal.classList.contains('open')) closeLogoutModal();
-    });
-}
 
 async function loadAccountDetails() {
     const address = document.getElementById('deliveryAddress');
@@ -107,6 +87,14 @@ function buildCategoryChips(products) {
             .filter(cat => cat && cat.toLowerCase() !== 'general')
     )];
 
+    const allButton = document.createElement('button');
+    allButton.type = 'button';
+    allButton.textContent = 'All';
+    allButton.dataset.cat = 'all';
+    allButton.classList.add('active');
+    allButton.setAttribute('aria-pressed', 'true');
+    chipsBox.appendChild(allButton);
+
     cats.forEach(cat => {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -119,21 +107,15 @@ function buildCategoryChips(products) {
     chipsBox.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         if (!btn) return;
-        const wasActive = btn.classList.contains('active');
         chipsBox.querySelectorAll('button').forEach(b => {
             b.classList.remove('active');
             b.setAttribute('aria-pressed', 'false');
         });
-        if (wasActive) {
-            renderGrid(PRODUCTS);
-            return;
-        }
-
         btn.classList.add('active');
         btn.setAttribute('aria-pressed', 'true');
 
         const cat = btn.dataset.cat;
-        const filtered = PRODUCTS.filter(p => p.category_name === cat);
+        const filtered = cat === 'all' ? PRODUCTS : PRODUCTS.filter(p => p.category_name === cat);
         renderGrid(filtered);
     });
 }
@@ -419,6 +401,10 @@ function wireModals() {
     const drawerCheckoutBtn = document.getElementById('drawerCheckoutBtn');
 
     const openCart = () => cartModal.classList.add('open');
+    if (window.location.hash === '#cart') {
+        openCart();
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    }
     document.getElementById('mobileCartBar').addEventListener('click', openCart);
     
     // Desktop sidebar and mobile bottom navigation cart buttons

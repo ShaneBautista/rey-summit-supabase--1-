@@ -854,11 +854,20 @@ body.shop-body{
 }
 
 .nav-icon{
-    font-size: 1.3rem;
     width: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.nav-icon svg{
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: #111;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .sidebar-cart-button{
@@ -927,6 +936,14 @@ body.shop-body{
         margin-left:clamp(210px, 18vw, 280px);
     }
     .left-sidebar .sidebar-nav{ flex:0 0 auto; }
+
+    .history-shell,
+    .track-shell,
+    .account-shell{
+        max-width:none;
+        margin-left:clamp(210px, 18vw, 280px);
+        margin-right:0;
+    }
     
     .bottom-nav{
         display: none !important;
@@ -1044,7 +1061,7 @@ body.shop-body{
 }
 
 /* Hide bottom nav on desktop */
-@media (min-width: 768px){
+@media (min-width: 1200px){
     .bottom-nav{
         display: none;
     }

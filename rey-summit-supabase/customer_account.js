@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadAccount();
     loadSupportTickets();
+    wireLogoutConfirmation();
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -63,6 +64,25 @@ document.addEventListener('DOMContentLoaded', () => {
             supportSubmitButton.disabled = false;
         }
     });
+
+    function wireLogoutConfirmation() {
+        const logoutTrigger = document.getElementById('logoutTrigger');
+        const logoutModal = document.getElementById('logoutModal');
+        const cancelLogout = document.getElementById('cancelLogout');
+
+        if (!logoutTrigger || !logoutModal) return;
+
+        const closeLogoutModal = () => logoutModal.classList.remove('open');
+
+        logoutTrigger.addEventListener('click', () => logoutModal.classList.add('open'));
+        cancelLogout?.addEventListener('click', closeLogoutModal);
+        logoutModal.addEventListener('click', (event) => {
+            if (event.target === logoutModal) closeLogoutModal();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && logoutModal.classList.contains('open')) closeLogoutModal();
+        });
+    }
 
     async function loadAccount() {
         try {
