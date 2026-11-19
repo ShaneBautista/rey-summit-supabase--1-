@@ -5,31 +5,6 @@
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (!paramsLoggedOut()) {
-        rsmSupabase.auth.getSession().then(async ({ data, error }) => {
-            if (error || !data.session) return;
-
-            if (document.querySelector('form')?.id === 'adminLoginForm') {
-                const { data: who } = await rsmSupabase.rpc('rsm_whoami');
-                if (who?.type === 'admin') {
-                    window.location.replace('admin_dashboard.html');
-                } else if (who?.type === 'staff') {
-                    window.location.replace(who.role === 'sales' ? 'sales_staff.html' : 'delivery_staff.html');
-                }
-                return;
-            }
-
-            const { data: who } = await rsmSupabase.rpc('rsm_whoami');
-            if (who?.type === 'admin') {
-                window.location.replace('admin_dashboard.html');
-            } else if (who?.type === 'staff') {
-                window.location.replace(who.role === 'sales' ? 'sales_staff.html' : 'delivery_staff.html');
-            } else {
-                window.location.replace('customer_ordering.html');
-            }
-        });
-    }
-
     const form         = document.querySelector('form');
     const messageBox   = document.getElementById('loginMessage');
     const passwordInput = document.getElementById('password');
@@ -95,7 +70,3 @@ document.addEventListener('DOMContentLoaded', () => {
         messageBox.className = `message ${type}`;
     }
 });
-
-function paramsLoggedOut() {
-    return new URLSearchParams(window.location.search).get('logged_out') === '1';
-}
