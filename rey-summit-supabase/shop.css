@@ -550,6 +550,10 @@ body.shop-body{
     .account-session-actions{ align-items:flex-start; flex-direction:column; gap:14px; }
 }
 
+@media (min-width:1200px){
+    .account-session-actions{ display:none; }
+}
+
 .badge.pending, .badge.confirmed{ background:#fff2d6; color:#a56b00; }
 .badge.preparing{ background:#e2ecff; color:#2b5bd7; }
 .badge.out_for_delivery{ background:#e0f6ff; color:#0b7fa8; }
@@ -910,7 +914,8 @@ body.shop-body{
     font:inherit;
 }
 
-.nav-link.logout:hover{
+.nav-link.logout:hover,
+.nav-link.sidebar-logout:hover{
     background: rgba(255, 100, 100, .3);
 }
 

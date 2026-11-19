@@ -41,6 +41,12 @@
                 <span>Account</span>
             </a>
         </nav>
+        <div class="sidebar-footer">
+            <button type="button" class="nav-link sidebar-logout" data-logout-trigger aria-haspopup="dialog" aria-controls="logoutModal">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M14 3h6v18h-6"/></svg></span>
+                <span>Log out</span>
+            </button>
+        </div>
     </aside>
 
     <main class="track-shell">
@@ -131,6 +137,18 @@
         </a>
     </nav>
 
+    <div class="modal-overlay" id="logoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
+        <div class="modal-card logout-confirm-card">
+            <h2 id="logoutTitle">Log out?</h2>
+            <p>Are you sure you want to log out of your account?</p>
+            <form action="customer_logout.php" method="post" class="modal-actions logout-form-actions">
+                <button type="button" class="cancel-btn" id="cancelLogout">Cancel</button>
+                <button type="submit" class="confirm-btn">Confirm</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="customer_logout.js?v=1"></script>
     <script src="tracking.js?v=5"></script>
 </body>
 </html>
