@@ -6,7 +6,13 @@
 // ============================================
 (function () {
     const cfg = window.RSM_CONFIG || {};
-    const sb = window.supabase.createClient(cfg.url, cfg.anonKey);
+    const sb = window.supabase.createClient(cfg.url, cfg.anonKey, {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+        },
+    });
     window.rsmSupabase = sb;
 
     const BRANCHES = ['Alangilan', 'Sta Teresita', 'Mabini Lipa', 'San Luis'];
@@ -54,8 +60,20 @@
     }
 
     async function hasSession() {
-        const { data } = await sb.auth.getSession();
-        return !!data.session;
+        for (let attempt = 0; attempt < 2; attempt++) {
+            const { data, error } = await sb.auth.getSession();
+            if (!error && data.session) {
+                const expiresAt = data.session.expires_at;
+                if (!expiresAt || expiresAt > Math.floor(Date.now() / 1000) + 30) {
+                    return true;
+                }
+            }
+            if (attempt === 0) {
+                const refreshed = await sb.auth.refreshSession();
+                if (!refreshed.error && refreshed.data.session) return true;
+            }
+        }
+        return false;
     }
 
     // ---------- payment proof storage ----------
