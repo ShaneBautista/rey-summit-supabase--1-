@@ -1,48 +1,52 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
-    <link rel="stylesheet" href="style.css?v=4">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-    <script src="supabase-config.js"></script>
-    <script src="supabase-api.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create an account | Rey Summit</title>
+  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="auth-theme.css?v=2">
 </head>
+<body class="rs-auth-page">
+  <main class="login-container register-container">
+    <div class="logo-badge"><img class="brand-logo" src="images/logo.png" alt="Rey Summit"></div>
+    <p class="rs-auth-kicker">JOIN REY SUMMIT</p>
+    <h2>Create your account</h2>
+    <p class="rs-auth-intro">A few details, then you can start ordering.</p>
+    <form class="rs-signup-form">
+      <div class="rs-auth-field">
+        <label for="email">Email address</label>
+        <input type="email" id="email" name="email" autocomplete="email" required>
+      </div>
+      <div class="rs-auth-field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" autocomplete="username" required>
+      </div>
+      <div class="rs-auth-field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" minlength="8" oninvalid="this.setCustomValidity('Must be 8 characters long in password.')" oninput="this.setCustomValidity('')" autocomplete="new-password" required>
+      </div>
+      <div class="rs-auth-field">
+        <label for="confirm-password">Confirm password</label>
+        <input type="password" id="confirm-password" name="confirm_password" autocomplete="new-password" required>
+      </div>
+      <div class="rs-auth-field rs-auth-field-wide">
+        <label for="address">Delivery address</label>
+        <textarea id="address" name="address" rows="2" autocomplete="street-address" required></textarea>
+      </div>
+      <div class="rs-auth-field rs-auth-field-wide">
+        <label for="phone">Phone number</label>
+        <input type="tel" id="phone" name="phone" class="phone-input" inputmode="numeric" pattern="09[0-9]{9}" title="Enter an 11-digit number starting with 09." minlength="11" maxlength="11" autocomplete="tel" required>
+      </div>
+      <p id="registerMessage" class="message error rs-auth-field-wide" role="alert" aria-live="polite"></p>
+      <button type="submit">Create account <span aria-hidden="true">→</span></button>
+      <p class="rs-auth-switch">Already have an account? <a href="Customer_Login.html">Sign in</a></p>
+    </form>
+  </main>
 
-<body>
-    <div class="login-container register-container">
-        <div class="logo-badge">
-            <img class="brand-logo" src="images/logo.png" alt="RSNU logo">
-        </div>
-        <h2>Register</h2>
-        <form method="POST">
-            <p id="registerMessage" class="message error" role="alert" aria-live="polite"></p>
-
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" autocomplete="username" required>
-
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" autocomplete="email" required>
-
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" minlength="8" oninvalid="this.setCustomValidity('Must be 8 characters long in password.')" oninput="this.setCustomValidity('')" autocomplete="new-password" required>
-
-            <label for="confirm-password">Confirm password:</label>
-            <input type="password" id="confirm-password" name="confirm_password" autocomplete="new-password" required>
-
-            <label for="phone">Phone number:</label>
-            <input type="tel" id="phone" name="phone" class="phone-input" inputmode="numeric" pattern="09[0-9]{9}" minlength="11" maxlength="11" autocomplete="tel" title="Enter an 11-digit number starting with 09." required>
-
-            <button type="submit">Register</button>
-            <p>Already have an account? <a href="Customer_Login.html">Login here</a></p>
-        </form>
-    </div>
-
-    <script src="register.js?v=4"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-api.js"></script>
+  <script src="register.js?v=4"></script>
 </body>
-
 </html>

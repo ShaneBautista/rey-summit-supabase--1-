@@ -1,0 +1,161 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+
+/* Blue ice theme scoped to the sign-in and customer registration pages. */
+body.rs-auth-page {
+  --auth-navy: #082652;
+  --auth-blue: #075db4;
+  --auth-muted: #607895;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  margin: 0;
+  padding: 34px 18px;
+  overflow-x: hidden;
+  color: var(--auth-navy);
+  font-family: "DM Sans", Arial, sans-serif;
+  background: linear-gradient(116deg,rgba(4,24,58,.76),rgba(4,74,137,.54) 57%,rgba(5,39,92,.76)),url("images/ice-cubes-background-ice-cube-texture-ice-wallpaper-it-makes-me-feel-fresh-and-feel-good-in-the-summer-ice-photo.jpg") center/cover fixed;
+}
+body.rs-auth-page::before,
+body.rs-auth-page::after { position: fixed; z-index: -1; content: ""; border-radius: 50%; pointer-events: none; filter: blur(2px); }
+body.rs-auth-page::before { width: 43vw; height: 43vw; left: -17vw; bottom: -25vw; background: rgba(31,132,211,.3); animation: auth-drift-left 13s ease-in-out infinite alternate; }
+body.rs-auth-page::after { width: 39vw; height: 39vw; top: -16vw; right: -13vw; background: rgba(86,180,239,.23); animation: auth-drift-right 15s ease-in-out infinite alternate; }
+
+body.rs-auth-page .login-container {
+  width: min(100%, 450px);
+  margin: auto;
+  padding: 34px clamp(25px,5vw,42px) 30px;
+  border: 1px solid rgba(255,255,255,.83);
+  border-radius: 24px;
+  background: rgba(250,253,255,.96);
+  box-shadow: 0 25px 75px rgba(2,23,57,.38),inset 0 1px 0 #fff;
+  color: var(--auth-navy);
+  backdrop-filter: blur(18px);
+  animation: auth-card-enter .65s cubic-bezier(.2,.75,.25,1) both;
+}
+body.rs-auth-page .login-container.page-exit { animation: auth-card-exit .3s ease-in both; }
+body.rs-auth-page .logo-badge {
+  width: 166px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 17px;
+  padding: 7px 12px;
+  clip-path: none;
+  border: 1px solid #d4e9fb;
+  border-radius: 16px;
+  background: linear-gradient(135deg,#e5f4ff,#f9fdff 65%,#dceeff);
+  box-shadow: 0 7px 18px rgba(24,104,171,.1),inset 0 1px #fff;
+  animation: auth-logo-float 4.5s ease-in-out infinite;
+}
+body.rs-auth-page .brand-logo,
+body.rs-auth-page .logo-badge .brand-logo {
+  width: 138px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0;
+  filter: drop-shadow(0 2px 3px rgba(5,55,104,.12));
+}
+body.rs-auth-page .rs-auth-kicker { margin: 0 0 6px; color: #1878c2; font: 800 9px/1.3 "Manrope",sans-serif; letter-spacing: .17em; text-align: center; }
+body.rs-auth-page .login-container h2 { margin: 0 0 7px; color: var(--auth-navy); font: 800 clamp(25px,5vw,30px)/1.15 "Manrope",sans-serif; letter-spacing: -.045em; text-align: center; }
+body.rs-auth-page .login-container > p:not(.rs-auth-kicker) { margin: 0 0 22px; color: var(--auth-muted); font-size: 12px; line-height: 1.55; text-align: center; }
+body.rs-auth-page .login-container form { width: 100%; margin: 0; }
+body.rs-auth-page .login-container label { display: block; margin: 13px 0 6px; color: #284e76; font: 700 11px/1.35 "DM Sans",sans-serif; }
+body.rs-auth-page .login-container input,
+body.rs-auth-page .login-container textarea,
+body.rs-auth-page .login-container select {
+  width: 100%;
+  min-width: 0;
+  height: 47px;
+  display: block;
+  margin: 0;
+  padding: 0 13px;
+  border: 1px solid #d2e2f0;
+  border-radius: 10px;
+  outline: 0;
+  background: #f6faff;
+  color: #142f50;
+  font: 500 14px/1.4 "DM Sans",sans-serif;
+  letter-spacing: normal;
+  box-shadow: inset 0 1px 2px rgba(22,67,111,.025);
+  transition: border-color .18s ease,background .18s ease,box-shadow .18s ease;
+}
+body.rs-auth-page .login-container input::placeholder,
+body.rs-auth-page .login-container textarea::placeholder { color: #9aafc2; }
+body.rs-auth-page .login-container input:focus,
+body.rs-auth-page .login-container textarea:focus,
+body.rs-auth-page .login-container select:focus { border-color: #4d9fe2; outline: 0; background: #fff; box-shadow: 0 0 0 4px rgba(35,132,207,.13); }
+body.rs-auth-page .login-container input[type="password"] { font-size: 15px; letter-spacing: .08em; }
+body.rs-auth-page .login-container input[type="tel"] { font-size: 14px; letter-spacing: .03em; }
+body.rs-auth-page .login-container textarea { height: 76px; min-height: 76px; padding: 11px 13px; resize: vertical; }
+body.rs-auth-page .login-container .password-toggle { width: 35px; height: 35px; top: 50%; right: 8px; margin: 0; padding: 0; border: 0; border-radius: 8px; background: transparent; box-shadow: none; color: #286eaa; }
+body.rs-auth-page .login-container .password-toggle:hover { background: #eaf4fc; }
+body.rs-auth-page .login-container button[type="submit"] { min-height: 47px; margin: 19px 0 0; padding: 0 18px; border: 0; border-radius: 10px; background: linear-gradient(110deg,#07549f,#0878cb); color: white; font: 700 13px "Manrope",sans-serif; box-shadow: 0 9px 18px rgba(6,80,150,.23); transition: transform .2s ease,box-shadow .2s ease,filter .2s ease; }
+body.rs-auth-page .login-container button[type="submit"]:hover { transform: translateY(-2px); filter: brightness(1.06); box-shadow: 0 12px 23px rgba(6,80,150,.3); }
+body.rs-auth-page .login-container button[type="submit"]:disabled { cursor: wait; opacity: .68; transform: none; }
+body.rs-auth-page .login-container button:focus-visible,
+body.rs-auth-page .login-container a:focus-visible { outline: 3px solid #6cb7f0; outline-offset: 3px; }
+body.rs-auth-page .login-container p { margin: 12px 0 0; color: var(--auth-muted); font-size: 11px; line-height: 1.5; text-align: center; }
+body.rs-auth-page .login-container a { color: #075ca9; font-weight: 700; text-decoration: none; }
+body.rs-auth-page .login-container a:hover { color: #087ed2; text-decoration: underline; }
+body.rs-auth-page .login-container #loginMessage { min-height: 0; margin: 10px 0 0; font-size: 11px; }
+body.rs-auth-page .login-container #loginMessage:empty { display: none; }
+body.rs-auth-page .login-container .message.error { color: #a42b3c; }
+body.rs-auth-page .login-container .message.success { color: #197247; }
+body.rs-auth-page .login-container .forgot-password-link { width: 100%; margin-top: 7px; text-align: right !important; }
+
+/* The registration form gets more room and uses a tidy two-column field grid. */
+body.rs-auth-page .login-container.register-container { width: min(100%, 640px); padding: 25px clamp(23px,4.5vw,40px) 24px; }
+body.rs-auth-page .register-container .logo-badge { width: 145px; height: 50px; margin-bottom: 10px; }
+body.rs-auth-page .register-container .brand-logo,
+body.rs-auth-page .register-container .logo-badge .brand-logo { width: 122px; }
+body.rs-auth-page .register-container h2 { margin-bottom: 5px; font-size: 26px; }
+body.rs-auth-page .register-container > p:not(.rs-auth-kicker) { margin-bottom: 13px; }
+body.rs-auth-page .register-container .rs-signup-form { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 14px; }
+body.rs-auth-page .register-container .rs-auth-field { min-width: 0; }
+body.rs-auth-page .register-container .rs-auth-field label { margin-top: 8px; }
+body.rs-auth-page .register-container .rs-auth-field-wide,
+body.rs-auth-page .register-container .rs-signup-form > button,
+body.rs-auth-page .register-container .rs-auth-switch { grid-column: 1 / -1; }
+body.rs-auth-page .register-container .rs-signup-form > button { margin-top: 16px; }
+body.rs-auth-page .register-container .rs-auth-switch { margin-top: 12px; }
+
+@keyframes auth-card-enter { from { opacity: 0; transform: translateY(20px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes auth-card-exit { to { opacity: 0; transform: translateY(12px) scale(.99); } }
+@keyframes auth-logo-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes auth-drift-left { from { transform: translate(0,0) scale(.94); } to { transform: translate(8vw,-4vh) scale(1.08); } }
+@keyframes auth-drift-right { from { transform: translate(0,0) scale(1); } to { transform: translate(-6vw,7vh) scale(.9); } }
+
+@media (max-width: 560px) {
+  body.rs-auth-page { align-content: start; padding: 20px 13px; background-attachment: scroll; }
+  body.rs-auth-page .login-container { width: min(100%,450px); padding: 27px 22px 24px; border-radius: 20px; }
+  body.rs-auth-page .login-container.register-container { width: min(100%,450px); padding: 22px 20px 21px; }
+  body.rs-auth-page .register-container .rs-signup-form { grid-template-columns: 1fr; gap: 0; }
+  body.rs-auth-page .register-container .rs-auth-field-wide,
+  body.rs-auth-page .register-container .rs-signup-form > button,
+  body.rs-auth-page .register-container .rs-auth-switch { grid-column: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.rs-auth-page *, body.rs-auth-page *::before, body.rs-auth-page *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* === Show/hide password button (taken from the login-UI zip) === */
+body.rs-auth-page .login-container:not(.register-container) .password-field { position: relative; }
+body.rs-auth-page .login-container:not(.register-container) .password-field input { padding-right: 45px; }
+body.rs-auth-page .login-container:not(.register-container) .password-toggle {
+  position: absolute; display: grid; place-items: center; width: 34px; height: 34px;
+  top: 50%; right: 7px; margin: 0; padding: 0; transform: translateY(-50%);
+  border: 0; border-radius: 50%; background: transparent; color: #58738e; box-shadow: none; cursor: pointer;
+}
+body.rs-auth-page .login-container:not(.register-container) .password-toggle:hover { background: #edf5fc; }
+body.rs-auth-page .eye-svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+body.rs-auth-page .eye-closed { display: none; }
+body.rs-auth-page .password-toggle.is-visible .eye-open { display: none; }
+body.rs-auth-page .password-toggle.is-visible .eye-closed { display: block; }
+body.rs-auth-page .login-container input[type="password"]::placeholder { letter-spacing: normal; }
+
+/* same text size/spacing whether the password is hidden (type=password) or shown (type=text) */
+body.rs-auth-page .login-container .password-field input,
+body.rs-auth-page .login-container .password-field input[type="password"],
+body.rs-auth-page .login-container .password-field input[type="text"] { font-size: 14px; letter-spacing: .04em; }

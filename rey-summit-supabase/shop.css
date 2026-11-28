@@ -1091,3 +1091,208 @@ body.shop-body{
     .route-runner{ animation:none; }
     .route-runner[data-status="completed"]{ left:calc(100% - 18px); }
 }
+
+/* smooth page switching (sidebar stays still, only content eases in) */
+.center-content,
+.track-shell,
+.history-shell,
+.account-shell{
+    animation: page-enter .22s ease both;
+}
+@keyframes page-enter{
+    from{ opacity:.65; transform:translateY(5px); }
+    to  { opacity:1;   transform:translateY(0); }
+}
+@media (prefers-reduced-motion: reduce){
+    .center-content,
+    .track-shell,
+    .history-shell,
+    .account-shell{ animation:none; }
+}
+
+/* ---------- Rey Summit customer shop refresh ---------- */
+:root{
+    --summit-blue:#0876c9;
+    --deep-navy:#092b55;
+    --glacier:#edf7ff;
+    --slate:#627b99;
+    --line:#d7e7f5;
+    --shadow-card:0 16px 42px rgba(10,49,91,.09);
+}
+
+body.shop-body{
+    color:#0b2b50;
+    background:
+        radial-gradient(ellipse at 86% 8%,rgba(110,190,255,.2),transparent 27rem),
+        linear-gradient(145deg,#f5faff 0%,#edf7ff 56%,#e5f2ff 100%);
+    font-family:'DM Sans','Manrope',Arial,sans-serif;
+}
+
+.shop-topbar{
+    min-height:78px;
+    padding:12px clamp(18px,4vw,54px);
+    background:linear-gradient(105deg,#082852 0%,#0a4b8c 58%,#087ac7 100%);
+    box-shadow:0 10px 28px rgba(6,39,77,.2);
+}
+
+.shop-topbar .brand{gap:14px;font-size:1.12rem;font-weight:800;letter-spacing:.01em}
+.shop-topbar .brand img{
+    height:46px;width:68px;object-fit:contain;padding:5px 7px;
+    border:1px solid rgba(255,255,255,.64);border-radius:13px;background:#fff;
+    filter:none;box-shadow:0 5px 14px rgba(0,0,0,.12)
+}
+
+.left-sidebar{
+    background:linear-gradient(180deg,#0b376c 0%,#082951 100%);
+    box-shadow:8px 0 28px rgba(5,36,74,.12);
+    border-right:1px solid rgba(255,255,255,.09);
+}
+.nav-link{
+    min-height:50px;padding:12px 14px;border:1px solid transparent;border-radius:14px;
+    color:rgba(238,247,255,.82);font-weight:650;transition:background .2s ease,border-color .2s ease,transform .2s ease,color .2s ease
+}
+.nav-link:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.09);transform:translateX(3px)}
+.nav-link.active{background:linear-gradient(100deg,rgba(89,175,255,.27),rgba(255,255,255,.12));border-color:rgba(184,221,255,.18);color:#fff;box-shadow:inset 3px 0 #8fd0ff}
+.nav-icon svg{stroke:#c5e6ff;stroke-width:1.9}
+.sidebar-footer{border-color:rgba(255,255,255,.15)}
+.sidebar-cart-count{background:#91d8ff;color:#092b55}
+
+.shop-shell .center-content{
+    width:min(100%,1680px);margin-inline:auto;padding:clamp(20px,3.4vw,48px) clamp(18px,4vw,58px) 56px;
+}
+.shop-shell h1{font-size:clamp(1.8rem,3vw,2.65rem);line-height:1.08;letter-spacing:-.045em;margin:0;color:#fff}
+.shop-shell .eyebrow{color:#6483a5;font-weight:800;letter-spacing:.17em}
+
+.shop-welcome{
+    position:relative;isolation:isolate;display:flex;align-items:center;justify-content:space-between;gap:28px;
+    min-height:244px;margin:0 0 36px;padding:clamp(25px,4vw,45px) clamp(24px,4.5vw,58px);
+    overflow:hidden;border:1px solid rgba(255,255,255,.22);border-radius:28px;
+    color:#fff;background:
+        linear-gradient(100deg,rgba(7,36,78,.98) 0%,rgba(8,67,126,.94) 53%,rgba(5,93,160,.68) 100%),
+        url('images/ice-cubes-background-ice-cube-texture-ice-wallpaper-it-makes-me-feel-fresh-and-feel-good-in-the-summer-ice-photo.jpg') center 45%/cover;
+    box-shadow:0 20px 46px rgba(7,48,97,.2);
+}
+.shop-welcome::before,.shop-welcome::after{content:"";position:absolute;z-index:-1;border:1px solid rgba(210,239,255,.17);border-radius:50%}
+.shop-welcome::before{width:360px;height:360px;right:6%;top:-210px;box-shadow:0 0 0 24px rgba(205,236,255,.035),0 0 0 54px rgba(205,236,255,.025)}
+.shop-welcome::after{width:220px;height:220px;right:34%;bottom:-180px;background:rgba(104,194,255,.14);filter:blur(2px)}
+.shop-welcome-copy{position:relative;z-index:2;max-width:690px}
+.shop-welcome-kicker{display:flex;align-items:center;gap:9px;margin:0 0 16px;color:#c9eaff;font-size:.69rem;font-weight:800;letter-spacing:.16em}
+.shop-live-dot{width:8px;height:8px;border-radius:50%;background:#70ddff;box-shadow:0 0 0 5px rgba(112,221,255,.14)}
+.shop-welcome-subtitle{margin:10px 0 0;color:#d6eaff;font-size:clamp(1rem,1.5vw,1.2rem);font-weight:500}
+.shop-welcome-points{display:flex;flex-wrap:wrap;gap:10px;margin-top:25px}
+.shop-welcome-points span{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid rgba(210,235,255,.2);border-radius:999px;background:rgba(255,255,255,.09);color:#eef8ff;font-size:.76rem;font-weight:700;backdrop-filter:blur(8px)}
+.shop-welcome-points b{display:grid;place-items:center;width:17px;height:17px;border-radius:50%;background:#70d8ff;color:#073363;font-size:.65rem}
+.shop-welcome-art{position:relative;z-index:1;flex:0 0 clamp(160px,20vw,240px);height:190px;display:grid;place-items:center}
+.shop-welcome-orbit{position:absolute;width:184px;height:184px;border:1px solid rgba(225,244,255,.34);border-radius:50%;box-shadow:0 0 0 17px rgba(225,244,255,.055),0 0 0 38px rgba(225,244,255,.035);animation:shop-orbit 24s linear infinite}
+.shop-welcome-orbit::before{content:"";position:absolute;top:19px;right:21px;width:9px;height:9px;border:2px solid #c4ecff;border-radius:3px;background:#1885d2;box-shadow:0 0 14px rgba(151,222,255,.8)}
+.shop-welcome-art img{position:relative;width:154px;height:178px;object-fit:contain;border:8px solid rgba(255,255,255,.88);border-radius:22px;background:#fff;box-shadow:0 18px 38px rgba(0,17,49,.25);transform:rotate(4deg);mix-blend-mode:normal;animation:shop-product-float 5s ease-in-out infinite}
+.shop-welcome-stamp{position:absolute;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;padding:9px 13px;border:1px solid rgba(255,255,255,.64);border-radius:14px;background:rgba(239,249,255,.94);color:#0a4f91;box-shadow:0 8px 20px rgba(0,24,54,.2);transform:rotate(-4deg)}
+.shop-welcome-stamp b{font-size:.68rem;letter-spacing:.12em}.shop-welcome-stamp small{font-size:.5rem;font-weight:800;letter-spacing:.14em}
+
+.catalog-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:16px}
+.catalog-heading h2{margin:5px 0 4px;color:#0b2b50;font-size:clamp(1.4rem,2.2vw,1.85rem);line-height:1.12;letter-spacing:-.035em}
+.catalog-heading-note{color:#66809c;font-size:.87rem}
+.catalog-heading-tag{display:inline-flex;align-items:center;gap:8px;margin-bottom:5px;padding:9px 13px;border:1px solid #cfe3f5;border-radius:999px;background:rgba(255,255,255,.76);color:#275983;font-size:.72rem;font-weight:800;white-space:nowrap}
+.catalog-heading-tag span{color:#1684d2;font-size:1rem}
+
+.category-chips{gap:9px;margin:18px 0 22px}
+.category-chips button{padding:10px 19px;border-color:#d5e5f3;background:rgba(255,255,255,.84);color:#526e8c;font-weight:750;box-shadow:0 4px 11px rgba(11,56,99,.045)}
+.category-chips button:hover{border-color:#76b9ec;color:#07569a;background:#fff}
+.category-chips button.active{background:linear-gradient(105deg,#0875c7,#0b9ad5);box-shadow:0 9px 20px rgba(8,111,190,.22)}
+
+.product-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,218px),1fr));gap:18px}
+.product-card{min-height:418px;border:1px solid rgba(196,220,241,.72);border-radius:22px;background:rgba(255,255,255,.96);box-shadow:0 12px 32px rgba(11,53,94,.075);transition:transform .24s ease,box-shadow .24s ease,border-color .24s ease;animation:shop-card-enter .5s both}
+.product-card:nth-child(2){animation-delay:45ms}.product-card:nth-child(3){animation-delay:90ms}.product-card:nth-child(4){animation-delay:135ms}.product-card:nth-child(5){animation-delay:180ms}
+.product-card:hover{transform:translateY(-6px);border-color:#b6daf5;box-shadow:0 22px 40px rgba(11,53,94,.14)}
+.product-thumb{height:198px;background:radial-gradient(ellipse at 50% 36%,#fff 0%,#f5faff 52%,#e8f4ff 100%)}
+.product-thumb .product-image{padding:14px;background:transparent;mix-blend-mode:multiply;transition:transform .35s ease}
+.product-card:hover .product-image{transform:scale(1.045)}
+.product-thumb .thumb-badge{top:13px;left:13px;padding:6px 10px;border:1px solid #d9ebf9;background:rgba(255,255,255,.92);color:#1b5f96;font-size:.62rem;letter-spacing:.09em}
+.product-body{gap:8px;padding:17px 17px 18px}
+.product-body .p-name{min-height:42px;color:#12375d;font-size:1rem;font-weight:800;line-height:1.28}
+.product-body .p-desc{color:#7589a0;font-size:.79rem;line-height:1.42}
+.product-body .p-price{color:#0877bd;font-size:1.16rem;font-weight:850;letter-spacing:-.02em}
+.product-body .p-stock{padding:5px 10px;border:1px solid rgba(35,163,116,.12);font-size:.65rem;font-weight:800}
+.product-body .p-stock.out{border-color:rgba(202,76,70,.12)}
+.qty-row{margin-top:7px;padding:6px;background:#eef7ff;border:1px solid #e0eef9}
+.qty-row button{width:31px;height:31px;color:#0b5b9c;box-shadow:0 3px 8px rgba(9,58,102,.09)}
+.qty-row input{height:34px;border-color:#d6e5f2;background:#fff;color:#12375d}
+.add-btn{margin-top:8px;padding:12px 14px;border-radius:13px;background:linear-gradient(105deg,#0874c2,#0b9bd0);box-shadow:0 8px 17px rgba(8,111,190,.18);letter-spacing:.01em}
+.add-btn:hover:not(:disabled){box-shadow:0 12px 24px rgba(8,111,190,.27)}
+.add-btn:disabled{background:#cbd8df;color:#fff}
+.loading-state,.error-state{border:1px dashed #c8dced;border-radius:18px;background:rgba(255,255,255,.62)}
+
+@keyframes shop-orbit{to{transform:rotate(360deg)}}
+@keyframes shop-product-float{0%,100%{translate:0 0;rotate:4deg}50%{translate:0 -7px;rotate:2deg}}
+@keyframes shop-card-enter{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+
+.mobile-cart-bar{background:linear-gradient(100deg,#082e60,#087ac7);box-shadow:0 14px 30px rgba(5,43,88,.28)}
+.bottom-nav{border-color:#d8e7f3;background:rgba(255,255,255,.96);backdrop-filter:blur(14px);box-shadow:0 -8px 24px rgba(8,46,82,.08)}
+.nav-item.active{color:#0874bd}.nav-item.active .nav-icon{background:#e5f4ff}
+
+@media (min-width:1200px){
+    .shop-shell .center-content{padding-top:36px}
+    .shop-shell .center-content{margin-left:clamp(210px,18vw,280px);width:auto;max-width:1680px}
+    .left-sidebar{top:78px;height:calc(100svh - 78px)}
+}
+@media (max-width:850px){
+    .shop-welcome{min-height:218px;padding:25px 27px}
+    .shop-welcome-art{flex-basis:150px;height:160px}
+    .shop-welcome-orbit{width:142px;height:142px}
+    .shop-welcome-art img{width:120px;height:145px}
+    .shop-welcome-stamp{right:-5px;bottom:-3px}
+}
+@media (max-width:560px){
+    .shop-topbar{min-height:68px;padding:10px 16px}
+    .shop-topbar .brand{font-size:1rem}
+    .shop-topbar .brand img{height:39px;width:58px}
+    .shop-welcome{align-items:flex-start;min-height:0;margin-bottom:27px;padding:24px 20px;border-radius:22px}
+    .shop-welcome-art{position:absolute;right:-34px;bottom:-7px;flex-basis:auto;width:140px;height:145px;opacity:.42}
+    .shop-welcome-orbit{width:130px;height:130px}
+    .shop-welcome-art img{width:100px;height:124px}
+    .shop-welcome-stamp{display:none}
+    .shop-welcome-copy{max-width:78%}
+    .shop-welcome-kicker{font-size:.58rem;letter-spacing:.11em}
+    .shop-welcome-points{gap:7px;margin-top:18px}
+    .shop-welcome-points span{padding:7px 9px;font-size:.65rem}
+    .catalog-heading{align-items:flex-start}
+    .catalog-heading-note{max-width:250px;font-size:.8rem}
+    .catalog-heading-tag{display:none}
+    .product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .product-card{min-height:365px;border-radius:18px}
+    .product-thumb{height:150px}
+    .product-thumb .product-image{padding:10px}
+    .product-body{padding:13px 12px 14px;gap:7px}
+    .product-body .p-name{min-height:40px;font-size:.87rem}
+    .product-body .p-price{font-size:1rem}
+    .product-body .p-stock{font-size:.56rem;padding:4px 7px}
+    .p-price-row{align-items:flex-start;flex-direction:column;gap:5px}
+    .qty-row{gap:5px;padding:5px}
+    .qty-row button{width:27px;height:27px}
+    .qty-row input{width:43px;height:31px}
+    .add-btn{padding:10px 7px;font-size:.79rem}
+}
+@media (max-width:370px){
+    .product-grid{grid-template-columns:1fr}
+    .product-card{min-height:0}
+    .product-thumb{height:205px}
+    .shop-welcome-copy{max-width:100%}
+    .shop-welcome-art{opacity:.22}
+}
+@media (prefers-reduced-motion:reduce){
+    .product-card,.product-thumb .product-image,.nav-link{transition:none;animation:none}
+    .shop-welcome-orbit,.shop-welcome-art img{animation:none}
+    .product-card:hover,.nav-link:hover{transform:none}
+}
+
+/* Keep the customer header pinned while the catalog scrolls beneath it. */
+.shop-topbar{
+    position:fixed;
+    inset:0 0 auto;
+    width:100%;
+    z-index:1000;
+}
+body.shop-body{padding-top:78px}
+@media (max-width:560px){
+    body.shop-body{padding-top:68px}
+}

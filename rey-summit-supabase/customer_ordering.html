@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shop — Rey Summit</title>
-<link rel="stylesheet" href="shop.css?v=15">
+<link rel="stylesheet" href="shop.css?v=16">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-api.js"></script>
@@ -67,9 +67,30 @@
 
         <!-- Center Content -->
         <section class="center-content">
-            <p class="eyebrow">Catalog</p>
-            <h1>Hi, welcome <span id="customerUsername"></span>! What would you like to order?</h1>
+            <section class="shop-welcome" aria-labelledby="shopWelcomeTitle">
+                <div class="shop-welcome-copy">
+                    <p class="shop-welcome-kicker"><span class="shop-live-dot"></span> REY SUMMIT CUSTOMER SHOP</p>
+                    <h1 id="shopWelcomeTitle">Hi, welcome <span id="customerUsername"></span>!</h1>
+                    <p class="shop-welcome-subtitle">What would you like to order today?</p>
+                    <div class="shop-welcome-points" aria-label="Ordering benefits">
+                        <span><b aria-hidden="true">✓</b> Easy checkout</span>
+                        <span><b aria-hidden="true">✓</b> Delivery updates</span>
+                    </div>
+                </div>
+                <div class="shop-welcome-art">
+                    <div class="shop-welcome-orbit"></div>
+                    <img src="images/ice-tube-1kg.jpg" alt="Packaged Rey Summit ice tubes">
+                    <span class="shop-welcome-stamp"><b>PURE</b><small>FRESH ICE</small></span>
+                </div>
+            </section>
 
+            <div class="catalog-heading">
+                <div>
+                    <h2>Choose your ice</h2>
+                    <p class="catalog-heading-note">Freshly packed options for home, work, and every gathering.</p>
+                </div>
+                <span class="catalog-heading-tag"><span aria-hidden="true">❄</span> Chilled and ready</span>
+            </div>
             <div class="category-chips" id="categoryChips"></div>
 
             <div class="product-grid" id="productGrid">

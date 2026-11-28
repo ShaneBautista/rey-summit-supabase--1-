@@ -1,38 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rey Summit Icetube</title>
-    <link rel="stylesheet" href="style.css?v=4">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-    <script src="supabase-config.js"></script>
-    <script src="supabase-api.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rey Summit | Company sign in</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="auth-theme.css">
 </head>
-<body>
-    <div class="login-container">
-       <div class="logo-badge">
-            <img class="brand-logo" src="images/logo.png" alt="RSNU logo">
-        </div>
-        <h2>Welcome!</h2>
-        <form id="adminLoginForm" method="POST">
-            <div class="form-group">
-                <label for="adminEmail">Email:</label>
-                <input type="email" id="adminEmail" name="adminEmail" required>
-            </div>
-            <label for="password">Password:</label>
-            <div class="password-field">
-                <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
-                <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false" title="Show password"><span class="eye-icon" aria-hidden="true"></span></button>
-            </div>
-   
-            <p class="forgot-password-link"><a href="Forgot_password.html?type=admin">Forgot password?</a></p>
-            <p id="loginMessage" class="message error" aria-live="polite"></p>
-            <button type="submit">Login</button>
-            <p>Use your admin or staff work email and password.</p>
-        </form>
-    </div>
-
-    <script src="Login.js?v=6"></script>
+<body class="rs-auth-page">
+  <main class="login-container">
+    <div class="logo-badge"><img class="brand-logo" src="images/logo.png" alt="Rey Summit Marketing"></div>
+    <p class="rs-auth-kicker">COMPANY PORTAL</p>
+    <h2>Welcome back</h2>
+    <p class="rs-auth-intro">Sign in to your Rey Summit operations workspace.</p>
+    <form id="adminLoginForm">
+      <label for="adminEmail">Work email</label>
+      <input id="adminEmail" name="adminEmail" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <button type="submit">Sign in to company portal</button>
+      <p id="loginMessage" class="message" role="status" aria-live="polite"></p>
+      <p><a href="Forgot_password.html?type=admin">Forgot password?</a></p>
+    </form>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-api.js"></script>
+  <script src="Login.js?v=6"></script>
 </body>
 </html>

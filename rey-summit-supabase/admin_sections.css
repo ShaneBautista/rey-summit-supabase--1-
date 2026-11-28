@@ -3184,7 +3184,7 @@ th:last-child {
 
 .admin-notification-panel {
     position: absolute;
-    z-index: 5;
+    z-index: 20;
     top: calc(100% + 10px);
     right: 0;
     width: min(340px, calc(100vw - 32px));
@@ -3287,4 +3287,442 @@ th:last-child {
     .forecast-legend {
         gap: 9px 14px;
     }
+}
+
+/* Company dashboard presentation based on the approved navy mockup. */
+body[data-page="overview"] {
+    --overview-navy:#09294f;
+    --overview-blue:#0878c8;
+    --overview-ink:#102f52;
+    --overview-muted:#67809b;
+    background:radial-gradient(ellipse at 82% 0%,rgba(112,188,239,.18),transparent 32rem),#f1f6fb;
+    color:var(--overview-ink);
+}
+body[data-page="overview"]::before {background:linear-gradient(90deg,#55d2f2,#0878c8 45%,#09294f)}
+body[data-page="overview"] .shell {display:grid;grid-template-columns:250px minmax(0,1fr)}
+body[data-page="overview"] .shell>aside {
+    position:sticky;top:0;align-self:start;height:100vh;min-height:100vh;padding:25px 16px 18px;
+    border-right:1px solid rgba(255,255,255,.08);background:linear-gradient(175deg,#0c3767,#08274c 68%,#061f3d);
+    box-shadow:10px 0 30px rgba(7,36,72,.12)
+}
+body[data-page="overview"] .brand {display:flex;align-items:center;gap:11px;padding:4px 9px 30px}
+body[data-page="overview"] .overview-brand-logo {width:45px;height:40px;object-fit:contain;padding:5px;border-radius:10px;background:#fff}
+body[data-page="overview"] .brand small {display:block;color:#9cb8d1;font-size:9px;font-weight:800;letter-spacing:.16em}
+body[data-page="overview"] .brand h1 {margin:3px 0 0;color:#fff;font-size:17px;letter-spacing:-.035em}
+body[data-page="overview"] .shell>aside>nav {gap:5px}
+body[data-page="overview"] .shell>aside>nav a {
+    display:flex;align-items:center;min-height:43px;padding:0 11px;border:1px solid transparent;border-radius:10px;
+    color:#c5d5e4;font-size:11px;font-weight:650;transition:background .18s,border-color .18s,transform .18s,color .18s
+}
+body[data-page="overview"] .shell>aside>nav a::before {width:23px;flex:none;margin-right:10px;color:#a9cce8;font-size:14px;text-align:center}
+body[data-page="overview"] .shell>aside>nav a:nth-child(1)::before {content:"▦"}
+body[data-page="overview"] .shell>aside>nav a:nth-child(2)::before {content:"↗"}
+body[data-page="overview"] .shell>aside>nav a:nth-child(3)::before {content:"▤"}
+body[data-page="overview"] .shell>aside>nav a:nth-child(4)::before {content:"⌁"}
+body[data-page="overview"] .shell>aside>nav a:nth-child(5)::before {content:"◷"}
+body[data-page="overview"] .shell>aside>nav a:nth-child(6)::before {content:"₱"}
+body[data-page="overview"] .shell>aside>nav a:nth-child(7)::before {content:"♧"}
+body[data-page="overview"] .shell>aside>nav a:hover {transform:translateX(2px);background:#ffffff12;color:#fff}
+body[data-page="overview"] .shell>aside>nav a.active {border-color:#ffffff20;background:linear-gradient(100deg,#1765a4,#174d80);box-shadow:inset 3px 0 #6ed0ff,0 7px 18px #031b3655;color:#fff}
+body[data-page="overview"] .aside-footer {border-color:#ffffff20;color:#9fb4c9;font-size:10px}
+body[data-page="overview"] .aside-footer .logout {color:#f0aeb2}
+body[data-page="overview"] .shell>main {width:100%;max-width:none;min-width:0;margin:0;padding:28px clamp(18px,3vw,42px) 46px}
+body[data-page="overview"] .topbar {
+    position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:148px;
+    margin-bottom:17px;padding:26px clamp(21px,3vw,37px);overflow:visible;border:1px solid #ffffff2e;border-radius:20px;
+    background:radial-gradient(circle at 87% 5%,#5cb6ef4f,transparent 14rem),linear-gradient(112deg,#092c56,#0d4f88 62%,#117fc0);
+    box-shadow:0 17px 38px #0c3a691e
+}
+body[data-page="overview"] .topbar::after {display:none}
+body[data-page="overview"] .topbar>div:first-child {position:relative;z-index:1}
+body[data-page="overview"] .topbar .kicker {color:#a9e1ff;font-size:9px;font-weight:850;letter-spacing:.2em}
+body[data-page="overview"] .topbar h2 {margin:9px 0;color:#fff;font-size:clamp(30px,3vw,41px);letter-spacing:-.055em}
+body[data-page="overview"] .topbar .intro {margin:0;color:#c8def0;font-size:12px;font-weight:500}
+body[data-page="overview"] .admin-topbar-actions {position:relative;z-index:2;align-items:center}
+body[data-page="overview"] .date-chip {border-color:#ffffff45;border-radius:10px;background:#ffffffed;color:#496987;font-size:10px;font-weight:700;box-shadow:0 7px 18px #00183920}
+body[data-page="overview"] .admin-notification-button {border-color:#ffffff45;border-radius:10px;background:#fff;color:#193a5a;box-shadow:0 7px 18px #00183920}
+body[data-page="overview"] .overview-filter-panel,
+body[data-page="overview"] .overview-dashboard-panel,
+body[data-page="overview"] .analytics-panel,
+body[data-page="overview"] .dss-panel,
+body[data-page="overview"] .support-tickets-panel,
+body[data-page="overview"] .operations-panel {
+    border:1px solid #dce7f1;border-radius:15px;background:#fff;box-shadow:0 10px 25px #173f6610
+}
+body[data-page="overview"] .overview-filter-panel {gap:10px 12px;min-height:68px;margin-bottom:15px;padding:12px 14px}
+body[data-page="overview"] .overview-filter-panel>label,
+body[data-page="overview"] .overview-date-filter>label {color:#6b8097;font-size:10px;font-weight:750}
+body[data-page="overview"] .branch-filter-panel select,
+body[data-page="overview"] .overview-date-filter select,
+body[data-page="overview"] .overview-date-filter input {min-height:37px;border:1px solid #d8e4ef;border-radius:8px;background:#fbfdff;color:#16395d;font-size:10px}
+body[data-page="overview"] .overview-date-apply {min-height:37px;padding:0 15px;border:0;border-radius:8px;background:linear-gradient(105deg,#0d3767,#087bc5);font-size:10px;font-weight:800;box-shadow:0 6px 14px #0c67a72b;transition:transform .18s,box-shadow .18s}
+body[data-page="overview"] .overview-date-apply:hover:not(:disabled) {transform:translateY(-1px);box-shadow:0 9px 18px #0c67a736}
+body[data-page="overview"] .overview-dashboard-panel,
+body[data-page="overview"] .analytics-panel,
+body[data-page="overview"] .dss-panel,
+body[data-page="overview"] .support-tickets-panel,
+body[data-page="overview"] .operations-panel {padding:19px}
+body[data-page="overview"] .overview-dashboard-panel .panel-head,
+body[data-page="overview"] .dss-panel .panel-head,
+body[data-page="overview"] .support-tickets-panel .panel-head {margin-bottom:15px}
+body[data-page="overview"] .overview-dashboard-panel h3,
+body[data-page="overview"] .analytics-panel>h3,
+body[data-page="overview"] .dss-panel h3,
+body[data-page="overview"] .support-tickets-panel h3,
+body[data-page="overview"] .operations-panel>h3 {margin:0 0 5px;color:#1b3b59;font-size:16px;letter-spacing:-.025em}
+body[data-page="overview"] .panel-note {margin:4px 0 0;color:#7a8fa4;font-size:9px;font-weight:500;line-height:1.6}
+body[data-page="overview"] .overview-kpis {grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 16px}
+body[data-page="overview"] .overview-kpis .metric {
+    position:relative;min-width:0;min-height:113px;padding:13px 14px;overflow:hidden;
+    border:1px solid #e0eaf3;border-radius:11px;background:linear-gradient(145deg,#fff,#fbfdff);
+    box-shadow:0 6px 16px #123b630c;transition:transform .18s,border-color .18s,box-shadow .18s
+}
+body[data-page="overview"] .overview-kpis .metric::before {position:absolute;top:0;left:0;width:100%;height:3px;background:var(--kpi-accent,#168bcf);content:""}
+body[data-page="overview"] .overview-kpis .metric:nth-child(2) {--kpi-accent:#1ba68a}
+body[data-page="overview"] .overview-kpis .metric:nth-child(3) {--kpi-accent:#6578d5}
+body[data-page="overview"] .overview-kpis .metric:nth-child(4) {--kpi-accent:#e89b37}
+body[data-page="overview"] .overview-kpis .metric:nth-child(5) {--kpi-accent:#518fcd}
+body[data-page="overview"] .overview-kpis .metric:nth-child(6) {--kpi-accent:#cb6d8a}
+body[data-page="overview"] .overview-kpis .metric:nth-child(7) {--kpi-accent:#149aa8}
+body[data-page="overview"] .overview-kpis .metric:hover {transform:translateY(-2px);border-color:#bfd6e9;box-shadow:0 12px 23px #163c5b12}
+body[data-page="overview"] .overview-kpis .metric-label {color:#6e8398;font-size:9px;font-weight:750}
+body[data-page="overview"] .overview-kpis .metric strong {margin:8px 0 3px;color:#102f52;font-size:clamp(21px,2vw,26px);letter-spacing:-.05em}
+body[data-page="overview"] .overview-kpis .metric>span:last-child {color:#8093a7;font-size:9px;font-weight:500;line-height:1.4}
+body[data-page="overview"] .overview-best-branch strong {font-size:clamp(16px,1.5vw,20px)}
+body[data-page="overview"] .overview-chart-grid {gap:11px}
+body[data-page="overview"] .overview-chart-card,
+body[data-page="overview"] .revenue-panel,
+body[data-page="overview"] .analytics-panel .analytics-card {border-color:#e0eaf3;border-radius:11px;background:linear-gradient(150deg,#fff,#fcfdff)}
+body[data-page="overview"] .overview-chart-card {padding:15px}
+body[data-page="overview"] .analytics-heading h4 {color:#183d60;font-size:11px}
+body[data-page="overview"] .analytics-heading p,
+body[data-page="overview"] .branch-sales-summary {color:#8294a8;font-size:8px}
+body[data-page="overview"] .revenue-line,
+body[data-page="overview"] .chart-point {stroke:#328dbb}
+body[data-page="overview"] .chart-grid-line {stroke:#ebf0f5}
+body[data-page="overview"] .chart-axis-label,
+body[data-page="overview"] .chart-date-label {fill:#8192a3}
+body[data-page="overview"] .analytics-panel {margin-top:15px}
+body[data-page="overview"] .analytics-panel .panel-note {margin-bottom:13px}
+body[data-page="overview"] .revenue-panel,
+body[data-page="overview"] .analytics-panel .analytics-card {padding:15px}
+body[data-page="overview"] .analytics-grid {gap:11px;margin-top:11px}
+body[data-page="overview"] .operation-card {border:1px solid #e0eaf3;border-radius:11px;background:linear-gradient(145deg,#fff,#f8fbff);box-shadow:0 6px 16px #123b630c}
+body[data-page="overview"] .operation-card:hover {border-color:#bfd9ec;box-shadow:0 12px 22px #163c5b12}
+@media (max-width:1000px) {
+    body[data-page="overview"] .shell {grid-template-columns:minmax(0,1fr)}
+    body[data-page="overview"] .shell>aside {position:relative;height:auto;min-height:0;padding:16px;border-right:0;border-bottom:1px solid #ffffff18}
+    body[data-page="overview"] .brand {padding:0 6px 13px}
+    body[data-page="overview"] .overview-brand-logo {width:38px;height:34px}
+    body[data-page="overview"] .shell>aside>nav {gap:5px}
+    body[data-page="overview"] .shell>aside>nav a {min-height:38px;padding:0 9px}
+    body[data-page="overview"] .shell>main {max-width:none;padding:22px clamp(15px,3vw,30px) 36px}
+}
+@media (max-width:700px) {
+    body[data-page="overview"] .topbar {display:flex;flex-wrap:wrap;align-items:flex-start;min-height:0;margin-bottom:13px;padding:21px 18px;border-radius:16px}
+    body[data-page="overview"] .topbar h2 {font-size:clamp(28px,7.5vw,35px)}
+    body[data-page="overview"] .topbar::after {right:-90px}
+    body[data-page="overview"] .admin-topbar-actions {width:100%;justify-content:flex-start;flex-direction:row-reverse}
+    body[data-page="overview"] .overview-filter-panel {display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:13px}
+    body[data-page="overview"] .overview-filter-panel>label,
+    body[data-page="overview"] .overview-filter-panel>#adminBranchFilter,
+    body[data-page="overview"] .overview-date-filter,
+    body[data-page="overview"] .overview-date-filter>label,
+    body[data-page="overview"] #overviewFilterStatus {grid-column:1/-1}
+    body[data-page="overview"] .overview-filter-panel>#adminBranchFilter,
+    body[data-page="overview"] .overview-date-filter select,
+    body[data-page="overview"] .overview-date-filter input,
+    body[data-page="overview"] .overview-date-filter button {width:100%;min-width:0}
+    body[data-page="overview"] .overview-date-filter {display:grid;grid-template-columns:1fr 1fr;margin:0;gap:8px}
+    body[data-page="overview"] .overview-kpis {grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    body[data-page="overview"] .overview-kpis .metric {min-height:101px;padding:11px}
+    body[data-page="overview"] .overview-kpis .metric strong {font-size:21px}
+    body[data-page="overview"] .overview-dashboard-panel,
+    body[data-page="overview"] .analytics-panel,
+    body[data-page="overview"] .dss-panel,
+    body[data-page="overview"] .support-tickets-panel,
+    body[data-page="overview"] .operations-panel {padding:14px}
+    body[data-page="overview"] .overview-chart-card,
+    body[data-page="overview"] .analytics-panel .analytics-card,
+    body[data-page="overview"] .revenue-panel {padding:12px}
+}
+@media (max-width:390px) {body[data-page="overview"] .overview-kpis {grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce) {
+    body[data-page="overview"] .overview-kpis .metric,
+    body[data-page="overview"] .overview-filter-panel select,
+    body[data-page="overview"] .overview-date-apply,
+    body[data-page="overview"] .shell>aside>nav a {transition:none}
+    body[data-page="overview"] .overview-kpis .metric:hover,
+    body[data-page="overview"] .shell>aside>nav a:hover {transform:none}
+}
+
+/* Shared company workspace styling for the remaining admin modules. */
+body[data-page]:not([data-page="overview"]) {
+    --workspace-navy:#09294f;
+    --workspace-blue:#0878c8;
+    --workspace-ink:#102f52;
+    --workspace-muted:#67809b;
+    min-height:100vh;
+    background:radial-gradient(ellipse at 82% 0%,rgba(112,188,239,.18),transparent 32rem),#f1f6fb;
+    color:var(--workspace-ink);
+}
+body[data-page]:not([data-page="overview"])::before {background:linear-gradient(90deg,#55d2f2,#0878c8 45%,#09294f)}
+body[data-page]:not([data-page="overview"]) .shell {display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
+body[data-page]:not([data-page="overview"]) .shell>aside {
+    position:sticky;top:0;align-self:start;width:auto;height:100vh;min-height:100vh;padding:25px 16px 18px;
+    border-right:1px solid rgba(255,255,255,.08);background:linear-gradient(175deg,#0c3767,#08274c 68%,#061f3d);
+    box-shadow:10px 0 30px rgba(7,36,72,.12)
+}
+body[data-page]:not([data-page="overview"]) .brand {padding:4px 9px 30px}
+body[data-page]:not([data-page="overview"]) .brand small {color:#9cb8d1;font-size:9px;font-weight:800;letter-spacing:.16em}
+body[data-page]:not([data-page="overview"]) .brand h1 {margin:3px 0 0;color:#fff;font-size:17px;letter-spacing:-.035em}
+body[data-page]:not([data-page="overview"]) .shell>aside>nav {gap:5px}
+body[data-page]:not([data-page="overview"]) .shell>aside>nav a {
+    display:flex;align-items:center;min-height:43px;padding:0 11px;border:1px solid transparent;border-radius:10px;
+    color:#c5d5e4;font-size:11px;font-weight:650;transition:background .18s,border-color .18s,transform .18s,color .18s
+}
+body[data-page]:not([data-page="overview"]) .shell>aside>nav a::before {width:23px;flex:none;margin-right:10px;color:#a9cce8;font-size:14px;text-align:center}
+body[data-page]:not([data-page="overview"]) .shell>aside>nav a:nth-child(1)::before {content:"▦"}
+body[data-page]:not([data-page="overview"]) .shell>aside>nav a:nth-child(2)::before {content:"↗"}
+body[data-page]:not([data-page="overview"]) .shell>aside>nav a:nth-child(3)::before {content:"▤"}
+body[data-page]:not([data-page="overview"]) .shell>aside>nav a:nth-child(4)::before {content:"⌁"}
+body[data-page]:not([data-page="overview"]) .shell>aside>nav a:nth-child(5)::before {content:"◷"}
+body[data-page]:not([data-page="overview"]) .shell>aside>nav a:nth-child(6)::before {content:"₱"}
+body[data-page]:not([data-page="overview"]) .shell>aside>nav a:nth-child(7)::before {content:"♧"}
+body[data-page]:not([data-page="overview"]) .shell>aside>nav a:hover {transform:translateX(2px);background:#ffffff12;color:#fff}
+body[data-page]:not([data-page="overview"]) .shell>aside>nav a.active {border-color:#ffffff20;background:linear-gradient(100deg,#1765a4,#174d80);box-shadow:inset 3px 0 #6ed0ff,0 7px 18px #031b3655;color:#fff}
+body[data-page]:not([data-page="overview"]) .aside-footer {border-color:#ffffff20;color:#9fb4c9;font-size:10px}
+body[data-page]:not([data-page="overview"]) .aside-footer .logout {color:#f0aeb2}
+body[data-page]:not([data-page="overview"]) .shell>main {width:100%;max-width:none;min-width:0;margin:0;padding:28px clamp(18px,3vw,42px) 46px}
+body[data-page]:not([data-page="overview"]) .topbar {
+    position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:132px;
+    margin-bottom:17px;padding:24px clamp(21px,3vw,37px);overflow:visible;border:1px solid #ffffff2e;border-radius:20px;
+    background:radial-gradient(circle at 87% 5%,#5cb6ef4f,transparent 14rem),linear-gradient(112deg,#092c56,#0d4f88 62%,#117fc0);
+    box-shadow:0 17px 38px #0c3a691e
+}
+body[data-page]:not([data-page="overview"]) .topbar::after {display:none}
+body[data-page]:not([data-page="overview"]) .topbar>div:first-child {position:relative;z-index:1}
+body[data-page]:not([data-page="overview"]) .topbar .kicker {color:#a9e1ff;font-size:9px;font-weight:850;letter-spacing:.2em}
+body[data-page]:not([data-page="overview"]) .topbar h2 {margin:9px 0;color:#fff;font-size:clamp(30px,3vw,41px);letter-spacing:-.055em}
+body[data-page]:not([data-page="overview"]) .topbar .intro {margin:0;color:#c8def0;font-size:12px;font-weight:500}
+body[data-page]:not([data-page="overview"]) .date-chip {position:relative;z-index:1;border-color:#ffffff45;border-radius:10px;background:#ffffffed;color:#496987;font-size:10px;font-weight:700;box-shadow:0 7px 18px #00183920}
+body[data-page]:not([data-page="overview"]) .panel {border:1px solid #dce7f1;border-radius:15px;background:#fff;box-shadow:0 10px 25px #173f6610}
+body[data-page]:not([data-page="overview"]) .panel h3 {color:#1b3b59;font-size:16px;letter-spacing:-.025em}
+body[data-page]:not([data-page="overview"]) .panel-note,
+body[data-page]:not([data-page="overview"]) .empty {color:#7a8fa4;font-size:11px;line-height:1.6}
+body[data-page]:not([data-page="overview"]) input:not([type="checkbox"]):not([type="radio"]),
+body[data-page]:not([data-page="overview"]) select,
+body[data-page]:not([data-page="overview"]) textarea {
+    border-color:#d8e4ef;border-radius:8px;background:#fbfdff;color:#16395d;transition:border-color .18s,box-shadow .18s
+}
+body[data-page]:not([data-page="overview"]) input:focus,
+body[data-page]:not([data-page="overview"]) select:focus,
+body[data-page]:not([data-page="overview"]) textarea:focus {border-color:#65afe0;box-shadow:0 0 0 3px #1687d31a;outline:0}
+body[data-page]:not([data-page="overview"]) .primary-button,
+body[data-page]:not([data-page="overview"]) .overview-date-apply {
+    border:0;border-radius:9px;background:linear-gradient(105deg,#0d3767,#087bc5);color:#fff;
+    box-shadow:0 6px 14px #0c67a72b;transition:transform .18s,box-shadow .18s
+}
+body[data-page]:not([data-page="overview"]) .primary-button:hover:not(:disabled),
+body[data-page]:not([data-page="overview"]) .overview-date-apply:hover:not(:disabled) {transform:translateY(-1px);box-shadow:0 9px 18px #0c67a736}
+body[data-page]:not([data-page="overview"]) .secondary-button {border:1px solid #d4e2ef;border-radius:9px;background:#f5faff;color:#17629c;transition:background .18s,border-color .18s,transform .18s}
+body[data-page]:not([data-page="overview"]) .secondary-button:hover:not(:disabled) {transform:translateY(-1px);border-color:#9fc8e5;background:#edf7ff}
+body[data-page]:not([data-page="overview"]) table {border-color:#e0eaf3}
+body[data-page]:not([data-page="overview"]) th {background:#f4f8fc;color:#58728b}
+body[data-page]:not([data-page="overview"]) td,
+body[data-page]:not([data-page="overview"]) th {border-color:#e7eef5}
+@media (max-width:1000px) {
+    body[data-page]:not([data-page="overview"]) .shell {grid-template-columns:minmax(0,1fr)}
+    body[data-page]:not([data-page="overview"]) .shell>aside {position:relative;width:auto;height:auto;min-height:0;padding:16px;border-right:0;border-bottom:1px solid #ffffff18}
+    body[data-page]:not([data-page="overview"]) .brand {padding:0 6px 13px}
+    body[data-page]:not([data-page="overview"]) .shell>aside>nav {gap:5px}
+    body[data-page]:not([data-page="overview"]) .shell>aside>nav a {min-height:38px;padding:0 9px}
+    body[data-page]:not([data-page="overview"]) .shell>main {max-width:none;padding:22px clamp(15px,3vw,30px) 36px}
+}
+@media (max-width:700px) {
+    body[data-page]:not([data-page="overview"]) .topbar {display:flex;flex-wrap:wrap;align-items:flex-start;min-height:0;margin-bottom:13px;padding:21px 18px;border-radius:16px}
+    body[data-page]:not([data-page="overview"]) .topbar h2 {font-size:clamp(28px,7.5vw,35px)}
+    body[data-page]:not([data-page="overview"]) .topbar::after {right:-90px}
+    body[data-page]:not([data-page="overview"]) .shell>aside>nav {display:flex;overflow-x:auto}
+    body[data-page]:not([data-page="overview"]) .shell>aside>nav a {flex:0 0 auto}
+    body[data-page]:not([data-page="overview"]) .aside-footer {display:none}
+}
+@media (prefers-reduced-motion:reduce) {
+    body[data-page]:not([data-page="overview"]) .shell>aside>nav a,
+    body[data-page]:not([data-page="overview"]) .primary-button,
+    body[data-page]:not([data-page="overview"]) .secondary-button {transition:none}
+    body[data-page]:not([data-page="overview"]) .shell>aside>nav a:hover,
+    body[data-page]:not([data-page="overview"]) .primary-button:hover,
+    body[data-page]:not([data-page="overview"]) .secondary-button:hover {transform:none}
+}
+
+/* Slightly larger workspace type and controls for comfortable daily use. */
+body[data-page] .shell {grid-template-columns:290px minmax(0,1fr)}
+body[data-page] .brand {display:flex;align-items:center;gap:12px}
+body[data-page] .brand>div {min-width:0}
+body[data-page] .workspace-brand-logo {display:block;flex:0 0 54px;width:54px;height:48px;object-fit:contain;padding:5px;border-radius:10px;background:#fff}
+body[data-page] .shell>aside {padding:29px 18px 20px}
+body[data-page] .brand {gap:12px}
+body[data-page] .brand small {font-size:11px}
+body[data-page] .brand h1 {font-size:20px}
+body[data-page] .overview-brand-logo {width:54px;height:48px}
+body[data-page] .shell>aside>nav a {min-height:54px;padding:0 13px;font-size:16px}
+body[data-page] .shell>aside>nav a::before {width:27px;margin-right:12px;font-size:19px}
+body[data-page] .aside-footer {font-size:13px}
+body[data-page] .shell>main {padding-top:30px}
+body[data-page] .topbar .kicker {font-size:10px}
+body[data-page] .topbar .intro {font-size:14px}
+body[data-page] .date-chip {font-size:12px}
+body[data-page] .panel h3 {font-size:18px}
+body[data-page] .panel-note,
+body[data-page] .empty {font-size:12px}
+body[data-page] .overview-filter-panel>label,
+body[data-page] .overview-date-filter>label {font-size:12px}
+body[data-page] .overview-filter-panel select,
+body[data-page] .overview-date-filter input,
+body[data-page] .overview-date-apply {min-height:40px;font-size:12px}
+body[data-page] .overview-kpis {gap:12px}
+body[data-page] .overview-kpis .metric {min-height:122px;padding:15px 16px}
+body[data-page] .overview-kpis .metric-label {font-size:11px}
+body[data-page] .overview-kpis .metric strong {font-size:clamp(23px,2.2vw,29px)}
+body[data-page] .overview-kpis .metric>span:last-child {font-size:11px}
+body[data-page] .overview-best-branch strong {font-size:clamp(18px,1.7vw,22px)}
+body[data-page] .analytics-heading h4 {font-size:13px}
+body[data-page] .analytics-heading p,
+body[data-page] .branch-sales-summary {font-size:10px}
+body[data-page] .primary-button,
+body[data-page] .secondary-button {font-size:13px}
+@media (max-width:1000px) {
+    body[data-page] .shell {grid-template-columns:minmax(0,1fr)}
+    body[data-page] .shell>aside {height:auto;min-height:0;padding:16px}
+    body[data-page] .overview-brand-logo {width:42px;height:38px}
+}
+@media (max-width:700px) {
+    body[data-page] .shell>aside>nav a {min-height:44px;padding:0 10px;font-size:13px}
+    body[data-page] .workspace-brand-logo {flex-basis:44px;width:44px;height:40px}
+    body[data-page] .overview-kpis .metric {min-height:108px;padding:12px}
+    body[data-page] .overview-kpis .metric strong {font-size:22px}
+}
+/* Apply the readability bump to forms, tables, and panels on every workspace page. */
+body[data-page] .panel {padding:24px;border-radius:15px}
+body[data-page] .panel-head {gap:14px}
+body[data-page] .panel h3 {font-size:19px}
+body[data-page] .panel-note,
+body[data-page] .empty {font-size:13px}
+body[data-page] .metric {padding:18px;min-height:120px;border-radius:13px}
+body[data-page] .metric-label {font-size:13px}
+body[data-page] .metric strong {font-size:30px}
+body[data-page] .metric span {font-size:13px}
+body[data-page] .sale-form>label,
+body[data-page] .sale-item-row label,
+body[data-page] .product-form label,
+body[data-page] .forecast-filters label {font-size:13px}
+body[data-page] .sale-form input,
+body[data-page] .sale-form select,
+body[data-page] .product-form input,
+body[data-page] .product-form select,
+body[data-page] .product-form textarea,
+body[data-page] .forecast-filters select,
+body[data-page] input:not([type="checkbox"]):not([type="radio"]),
+body[data-page] select,
+body[data-page] textarea {min-height:44px;padding:10px 12px;font-size:14px}
+body[data-page] .primary-button,
+body[data-page] .secondary-button,
+body[data-page] .overview-date-apply {min-height:43px;padding:0 16px;font-size:14px}
+body[data-page] th {font-size:12px}
+body[data-page] td {font-size:13px}
+body[data-page] .sale-total-row {font-size:16px}
+@media (max-width:700px) {
+    body[data-page] .panel {padding:18px}
+    body[data-page] .metric {min-height:108px;padding:13px}
+    body[data-page] .metric strong {font-size:24px}
+    body[data-page] input:not([type="checkbox"]):not([type="radio"]),
+    body[data-page] select,
+    body[data-page] textarea {font-size:14px}
+}
+
+/* Match the sidebar to the compact, readable Overview reference on every page. */
+body[data-page] .shell {grid-template-columns:250px minmax(0,1fr)}
+body[data-page] .shell>aside {padding:25px 16px 18px}
+body[data-page] .brand {gap:11px;padding:4px 9px 30px}
+body[data-page] .workspace-brand-logo {flex-basis:49px;width:49px;height:43px}
+body[data-page] .overview-brand-logo {width:49px;height:43px}
+body[data-page] .brand small {font-size:9px}
+body[data-page] .brand h1 {font-size:17px}
+body[data-page] .shell>aside>nav a {min-height:44px;padding:0 11px;font-size:12px}
+body[data-page] .shell>aside>nav a::before {width:23px;margin-right:10px;font-size:15px}
+body[data-page] .aside-footer {font-size:11px}
+@media (max-width:1000px) {
+    body[data-page] .shell {grid-template-columns:minmax(0,1fr)}
+    body[data-page] .shell>aside {padding:16px}
+}
+
+/* Approved light ice-blue company dashboard concept. */
+body[data-page="overview"] .topbar {
+    position:relative;isolation:isolate;min-height:205px;margin-bottom:16px;padding:29px clamp(22px,3vw,38px);
+    overflow:visible;border:1px solid #badbf5;border-radius:19px;
+    background:linear-gradient(95deg,rgba(229,246,255,.98) 0%,rgba(190,228,255,.94) 48%,rgba(67,157,218,.84) 100%),url("images/ice-cubes-background-ice-cube-texture-ice-wallpaper-it-makes-me-feel-fresh-and-feel-good-in-the-summer-ice-photo.jpg") center/cover;
+    box-shadow:0 15px 34px #0c5fa21c
+}
+body[data-page="overview"] .topbar::after {display:none}
+body[data-page="overview"] .topbar>div:first-child {position:relative;z-index:2;max-width:58%}
+body[data-page="overview"] .topbar .kicker {color:#1769ad;font-size:10px;letter-spacing:.17em}
+body[data-page="overview"] .topbar h2 {margin:9px 0;color:#102f63;font-size:clamp(32px,3.5vw,47px);letter-spacing:-.055em}
+body[data-page="overview"] .topbar .intro {max-width:480px;color:#31577e;font-size:14px;line-height:1.5}
+body[data-page="overview"] .overview-hero-art {position:absolute;z-index:1;inset:0 0 0 auto;display:flex;width:48%;align-items:center;justify-content:center;overflow:hidden;border-radius:0 19px 19px 0;background:radial-gradient(ellipse at 65% 82%,#dff6ff8c,transparent 53%);pointer-events:none}
+body[data-page="overview"] .overview-hero-art::before,
+body[data-page="overview"] .overview-hero-art::after {position:absolute;width:26px;height:26px;border:1px solid #ffffffa8;border-radius:7px;background:#e5f8ff88;content:"";transform:rotate(24deg)}
+body[data-page="overview"] .overview-hero-art::before {top:26%;left:7%}
+body[data-page="overview"] .overview-hero-art::after {right:8%;bottom:20%;width:34px;height:34px}
+body[data-page="overview"] .overview-hero-art img {position:relative;z-index:1;width:47%;height:118%;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(0 15px 19px #0759a52e);transform:rotate(5deg)}
+body[data-page="overview"] .overview-hero-button {display:inline-flex;align-items:center;gap:12px;margin-top:13px;padding:10px 16px;border-radius:999px;background:linear-gradient(100deg,#0755a7,#087ed0);box-shadow:0 8px 18px #0759a52c;color:#fff;font-size:12px;font-weight:750;text-decoration:none;transition:transform .18s,box-shadow .18s}
+body[data-page="overview"] .overview-hero-button:hover {transform:translateY(-2px);box-shadow:0 11px 22px #0759a53a}
+body[data-page="overview"] .admin-topbar-actions {position:relative;z-index:3;align-items:center}
+body[data-page="overview"] .date-chip {border-color:#c8dff2;background:#ffffffed;color:#345a80;font-size:11px}
+body[data-page="overview"] .overview-filter-panel,
+body[data-page="overview"] .overview-dashboard-panel,
+body[data-page="overview"] .analytics-panel,
+body[data-page="overview"] .dss-panel,
+body[data-page="overview"] .support-tickets-panel,
+body[data-page="overview"] .operations-panel {border-color:#d5e6f4;border-radius:15px;background:#ffffff;box-shadow:0 9px 24px #164d780d}
+body[data-page="overview"] .overview-filter-panel {min-height:74px;padding:14px 17px}
+body[data-page="overview"] .overview-dashboard-panel,
+body[data-page="overview"] .analytics-panel,
+body[data-page="overview"] .dss-panel,
+body[data-page="overview"] .support-tickets-panel,
+body[data-page="overview"] .operations-panel {padding:20px}
+body[data-page="overview"] .overview-dashboard-panel h3,
+body[data-page="overview"] .analytics-panel>h3,
+body[data-page="overview"] .dss-panel h3,
+body[data-page="overview"] .support-tickets-panel h3,
+body[data-page="overview"] .operations-panel>h3 {color:#143c67}
+body[data-page="overview"] .overview-kpis .metric {border-color:#dfebf5;border-radius:13px;background:linear-gradient(150deg,#fff,#f8fcff);box-shadow:0 6px 17px #12538a0c}
+body[data-page="overview"] .overview-chart-card,
+body[data-page="overview"] .analytics-panel .analytics-card,
+body[data-page="overview"] .revenue-panel {border-color:#dfebf5;border-radius:13px;background:linear-gradient(150deg,#fff,#f9fcff)}
+body[data-page="overview"] .overview-chart-card {padding:16px}
+body[data-page="overview"] .analytics-heading h4 {color:#153d68}
+body[data-page="overview"] .operation-card {min-height:132px;border-color:#d8e8f5;border-radius:13px;background:linear-gradient(145deg,#fff,#f3f9ff);box-shadow:0 7px 17px #12538a0d}
+body[data-page="overview"] .operation-card:hover {border-color:#9ac8eb;box-shadow:0 12px 24px #12538a1a}
+@media (max-width:700px) {
+    body[data-page="overview"] .topbar {min-height:190px;padding:21px 18px}
+    body[data-page="overview"] .topbar>div:first-child {max-width:72%}
+    body[data-page="overview"] .topbar h2 {font-size:clamp(29px,7.5vw,37px)}
+    body[data-page="overview"] .overview-hero-art {width:43%;opacity:.78}
+    body[data-page="overview"] .overview-hero-art img {width:74%;height:92%}
+    body[data-page="overview"] .overview-filter-panel {min-height:0;padding:13px}
+}
+@media (max-width:390px) {
+    body[data-page="overview"] .topbar>div:first-child {max-width:100%}
+    body[data-page="overview"] .overview-hero-art {right:-20%;width:60%;opacity:.28}
+}
+
+/* Gentle content entrance when switching between company pages. */
+@keyframes company-page-enter {
+    from {opacity:0;transform:translateY(9px)}
+    to {opacity:1;transform:translateY(0)}
+}
+body[data-page] .shell>main {animation:company-page-enter .28s ease-out both}
+@media (prefers-reduced-motion:reduce) {
+    body[data-page] .shell>main {animation:none}
 }

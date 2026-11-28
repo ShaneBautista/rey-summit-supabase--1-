@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overview | Rey Summit</title>
-    <link rel="stylesheet" href="admin_sections.css?v=26">
+    <link rel="stylesheet" href="admin_sections.css?v=38">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-api.js"></script>
@@ -13,8 +13,8 @@
     <div class="shell">
         <aside>
             <div class="brand">
-                <small>Rey Summit</small>
-                <h1>Operations Hub</h1>
+                <img class="overview-brand-logo workspace-brand-logo" src="images/logo.png" alt="">
+                <div><small>Rey Summit</small><h1>Operations Hub</h1></div>
             </div>
             <nav>
                 <a class="active" href="admin_dashboard.html">Overview</a>
@@ -34,8 +34,12 @@
             <header class="topbar">
                 <div>
                     <div class="kicker">Operations overview</div>
-                    <h2>Business at a glance.</h2>
-                    <p class="intro">A live view of sales, stock, and branch operations.</p>
+                    <h2>Welcome back, <span id="adminName">Admin</span>!</h2>
+                    <p class="intro">Manage orders, inventory, and branch operations with ease.</p>
+                    <a class="overview-hero-button" href="#analyticsTitle">View analytics <span aria-hidden="true">→</span></a>
+                </div>
+                <div class="overview-hero-art" aria-hidden="true">
+                    <img src="images/ice-tube-1kg.jpg" alt="">
                 </div>
                 <div class="date-chip" id="reportDate"></div>
             </header>
@@ -212,7 +216,7 @@
             </section>
 
             <section class="panel operations-panel" aria-labelledby="operationsTitle">
-                <h3 id="operationsTitle">Operations areas</h3>
+                <h3 id="operationsTitle">Quick actions</h3>
                 <div class="operations-grid">
                     <a class="operation-card" href="admin_inventory.html">
                         <span class="operation-label">Inventory</span>

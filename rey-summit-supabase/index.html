@@ -1,39 +1,170 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rey Summit Ordering System</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-    <script src="supabase-config.js"></script>
-    <script src="supabase-api.js"></script>
-    <style>body { background: #eef6f5; }</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eaf5ff">
+  <meta name="description" content="Order Rey Summit ice tubes online, choose delivery details, and follow your order from your customer account.">
+  <title>Rey Summit Marketing | Ice Tube Ordering</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="landing.css?v=5">
 </head>
-<body>
-    <p id="entryMessage">Checking your sign-in…</p>
-    <noscript>
-        <p><a href="Customer_Login.html">Customer ordering</a> ·
-           <a href="Admin_login.html">Company portal (admin and staff)</a></p>
-    </noscript>
-    <script>
-        (async () => {
-            const { data } = await rsmSupabase.auth.getSession();
-            if (!data.session) {
-                window.location.replace('Customer_Login.html');
-                return;
-            }
+<body class="rs-landing">
+  <header class="rs-header">
+    <a class="rs-brand" href="#home" aria-label="Rey Summit home">
+      <img src="images/logo.png" alt="">
+      <span>REY SUMMIT<small>MARKETING</small></span>
+    </a>
+    <button class="rs-menu-toggle" type="button" aria-expanded="false" aria-controls="rs-navigation" aria-label="Open navigation"><span></span><span></span></button>
+    <nav class="rs-nav" id="rs-navigation" aria-label="Main navigation">
+      <a class="rs-nav-link is-active" href="#home">Home</a>
+      <a class="rs-nav-link" href="#products">Ice Tubes</a>
+      <a class="rs-nav-link" href="#benefits">Why Order Online</a>
+      <a class="rs-nav-link" href="#about">About Us</a>
+      <a class="rs-nav-link" href="order_history.html">My Orders</a>
+      <a class="rs-login-mobile" href="Customer_Login.html">Login</a>
+    </nav>
+    <a class="rs-login" href="Customer_Login.html">Login</a>
+  </header>
 
-            const { data: who } = await rsmSupabase.rpc('rsm_whoami');
-            if (who?.type === 'admin') {
-                window.location.replace('admin_dashboard.html');
-            } else if (who?.type === 'staff') {
-                window.location.replace(who.role === 'sales' ? 'sales_staff.html' : 'delivery_staff.html');
-            } else {
-                window.location.replace('customer_ordering.html');
-            }
-        })().catch(() => {
-            window.location.replace('Customer_Login.html');
-        });
-    </script>
+  <main>
+    <section class="rs-hero" id="home">
+      <div class="rs-hero-photo" aria-hidden="true"></div>
+      <div class="rs-hero-wash" aria-hidden="true"></div>
+      <div class="rs-hero-copy rs-reveal">
+        <p class="rs-welcome"><span aria-hidden="true">❄</span> YOUR REY SUMMIT ORDER, MADE SIMPLE</p>
+        <h1>Your trusted ice tube supplier,<br><em>now online.</em></h1>
+        <p class="rs-hero-lede">Get the ice you need with easy online ordering, delivery updates, and your order history in one place.</p>
+        <div class="rs-hero-actions">
+          <a class="rs-button rs-button-primary" href="customer_ordering.html"><span aria-hidden="true">🛒</span> Order Now <span class="rs-arrow" aria-hidden="true">→</span></a>
+          <a class="rs-text-link" href="order_history.html">Check your orders <span aria-hidden="true">↗</span></a>
+        </div>
+        <p class="rs-hero-footnote"><span aria-hidden="true">✦</span> Easy to order. Easy to follow.</p>
+      </div>
+
+    </section>
+
+    <section class="rs-quick-benefits" aria-label="Customer ordering benefits">
+      <div class="rs-quick-benefit-row">
+          <div class="rs-quick-benefit rs-reveal"><span class="rs-quick-icon quick-shop" aria-hidden="true">⌕</span><span>Browse<br>Ice Tubes</span></div>
+          <div class="rs-quick-benefit rs-reveal"><span class="rs-quick-icon quick-checkout" aria-hidden="true">✓</span><span>Easy<br>Checkout</span></div>
+          <div class="rs-quick-benefit rs-reveal"><span class="rs-quick-icon quick-track" aria-hidden="true">⌁</span><span>Delivery<br>Tracking</span></div>
+          <div class="rs-quick-benefit rs-reveal"><span class="rs-quick-icon quick-history" aria-hidden="true">◷</span><span>Order<br>History</span></div>
+          <div class="rs-quick-benefit rs-reveal"><span class="rs-quick-icon quick-pay" aria-hidden="true">₱</span><span>Cash or<br>GCash</span></div>
+      </div>
+    </section>
+
+    <section class="rs-showcase" id="products" aria-labelledby="rs-showcase-title">
+      <div class="rs-showcase-heading rs-reveal">
+        <div><p class="rs-kicker"><span></span> THE REY SUMMIT WAY</p><h2 id="rs-showcase-title">Your ice order,<br><em>without the extra steps.</em></h2></div>
+        <p>Browse the catalog, place your order, and check delivery progress whenever you need to.</p>
+      </div>
+      <div class="rs-showcase-grid">
+        <article class="rs-showcase-card rs-showcase-product rs-reveal">
+          <div class="rs-showcase-image rs-showcase-photo"><img src="images/showcase-catalog.jpg" alt="Choose Your Ice: Rey Summit crushed ice and ice tube sacks with prices and Add to Cart" loading="lazy"></div>
+          <div class="rs-showcase-caption"><span>01 / CATALOG</span><h3>Find what you need</h3><p>Explore the available ice tube products.</p></div>
+        </article>
+        <article class="rs-showcase-card rs-showcase-order rs-reveal">
+          <div class="rs-showcase-image rs-showcase-photo"><img src="images/showcase-checkout.jpg" alt="Checkout: choose your ice, enter delivery details, pick Cash on Delivery or GCash, then place your order" loading="lazy"></div>
+          <div class="rs-showcase-caption"><span>02 / CHECKOUT</span><h3>Order in a few taps</h3><p>Add delivery details and choose a payment method.</p></div>
+        </article>
+        <article class="rs-showcase-card rs-showcase-delivery rs-reveal">
+          <div class="rs-showcase-image rs-showcase-photo"><img src="images/showcase-tracking.jpg" alt="Order tracking: see your order status from placed to delivered" loading="lazy"></div>
+          <div class="rs-showcase-caption"><span>03 / DELIVERY</span><h3>Stay in the loop</h3><p>Follow order progress and revisit past orders.</p></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="rs-benefits" id="benefits">
+      <div class="rs-benefits-inner">
+          <div class="rs-benefits-heading rs-reveal"><p class="rs-kicker"><span></span> MADE AROUND YOU</p><h2>A better way<br>to order ice.</h2><p>Everything you need for a smoother customer experience, right in your account.</p><a class="rs-button rs-button-primary" href="customer_ordering.html">Order Now <span class="rs-arrow" aria-hidden="true">→</span></a></div>
+        <div class="rs-benefit-list">
+          <article class="rs-benefit rs-reveal"><span class="rs-benefit-icon benefit-basket" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg></span><div><h3>Shop at your convenience</h3><p>Browse and order from your phone or computer.</p></div><span class="rs-benefit-index">01</span></article>
+          <article class="rs-benefit rs-reveal"><span class="rs-benefit-icon benefit-pin" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div><h3>Delivery details in one place</h3><p>Enter your address and contact details at checkout.</p></div><span class="rs-benefit-index">02</span></article>
+          <article class="rs-benefit rs-reveal"><span class="rs-benefit-icon benefit-route" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6"/></svg></span><div><h3>Know where your order is</h3><p>Check delivery progress from your account.</p></div><span class="rs-benefit-index">03</span></article>
+          <article class="rs-benefit rs-reveal"><span class="rs-benefit-icon benefit-history" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><h3>All your orders, together</h3><p>Return to your order history whenever you need it.</p></div><span class="rs-benefit-index">04</span></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="rs-about" id="about" aria-labelledby="rs-about-title">
+      <div class="rs-about-inner">
+        <div class="rs-about-copy rs-reveal">
+          <p class="rs-kicker"><span></span> ABOUT REY SUMMIT</p>
+          <h2 id="rs-about-title">Who we are,<br><em>and what we do.</em></h2>
+          <p>Rey Summit Marketing is a local business established in 2016, specializing in purified ice tubes and crushed ice. We proudly serve households, restaurants, resorts, convenience stores, and other local businesses across Batangas City and Lipa City. With a commitment to quality products and reliable service, we strive to provide customers with convenient access to the ice products they need every day.</p>
+        </div>
+        <div class="rs-about-facts">
+          <article class="rs-about-fact rs-reveal"><span class="rs-about-fact-value">2016</span><span class="rs-about-fact-label">Serving customers since</span></article>
+          <article class="rs-about-fact rs-reveal"><span class="rs-about-fact-value">2 Cities</span><span class="rs-about-fact-label">Batangas City &amp; Lipa City</span></article>
+          <article class="rs-about-fact rs-reveal"><span class="rs-about-fact-value">4 Branches</span><span class="rs-about-fact-label">Serving different locations</span></article>
+          <article class="rs-about-fact rs-reveal"><span class="rs-about-fact-value">Quality Ice</span><span class="rs-about-fact-label">Ice Tubes &amp; Crushed Ice</span></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="rs-final-cta rs-reveal">
+      <div class="cta-flake cta-flake-one" aria-hidden="true">❄</div><div class="cta-flake cta-flake-two" aria-hidden="true">✣</div>
+      <p class="rs-kicker">FRESH ICE IS A FEW TAPS AWAY</p><h2>Ready to place your order?</h2>
+      <a class="rs-button rs-button-white" href="customer_ordering.html">Order Now <span class="rs-arrow" aria-hidden="true">→</span></a>
+    </section>
+  </main>
+
+  <footer class="rs-footer">
+    <div class="rs-foot-grid">
+      <div class="rs-foot-col rs-foot-about">
+        <a class="rs-footer-brand" href="#home"><img src="images/logo.png" alt=""><span>REY SUMMIT<small>MARKETING</small></span></a>
+        <p>Rey Summit Marketing supplies purified ice tubes and crushed ice for households, restaurants, resorts, and local businesses in Batangas City and Lipa City.</p>
+      </div>
+      <nav class="rs-foot-col" aria-label="Quick links">
+        <h3>QUICK LINKS</h3>
+        <a href="#home">Home</a>
+        <a href="#products">Ice Tubes</a>
+        <a href="#benefits">Why Order Online</a>
+        <a href="#about">About Us</a>
+      </nav>
+      <nav class="rs-foot-col" aria-label="Account">
+        <h3>ACCOUNT</h3>
+        <a href="Customer_Login.html">Login</a>
+        <a href="order_history.html">My Orders</a>
+        <a href="customer_ordering.html">Order Now</a>
+      </nav>
+      <div class="rs-foot-col rs-foot-contact">
+        <h3>CONTACT US</h3>
+        <!-- CONTACT DETAILS: replace the placeholder text below with your real details -->
+        <span class="rs-foot-item"><span class="rs-foot-icon" aria-hidden="true">&#9990;</span>0933 868 1131</span>
+        <span class="rs-foot-item"><span class="rs-foot-icon" aria-hidden="true">&#9993;</span>reysummit_28@yahoo.com</span>
+        <span class="rs-foot-item"><span class="rs-foot-icon" aria-hidden="true">&#8982;</span>Alangilan, Batangas City</span>
+        <span class="rs-foot-item"><span class="rs-foot-icon" aria-hidden="true">&#9719;</span>Open: Days and hours</span>
+      </div>
+    </div>
+    <div class="rs-foot-bottom">
+      <small class="rs-copyright">© <span id="rs-year">2026</span> Rey Summit Marketing. All rights reserved.</small>
+      <span>Ice tube ordering, made easier.</span>
+    </div>
+  </footer>
+  <script src="landing.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-api.js"></script>
+  <script>
+    // Ordering pages need an account: signed in -> go there, otherwise -> login page.
+    (() => {
+      const protectedPages = ["customer_ordering.html", "order_history.html", "track_order.html"];
+      document.addEventListener("click", async (event) => {
+        const link = event.target.closest("a[href]");
+        if (!link || !protectedPages.includes(link.getAttribute("href"))) return;
+        event.preventDefault();
+        let loggedIn = false;
+        try {
+          const { data } = await rsmSupabase.auth.getSession();
+          loggedIn = !!(data && data.session);
+        } catch (e) {}
+        window.location.href = loggedIn ? link.getAttribute("href") : "Customer_Login.html";
+      });
+    })();
+  </script>
 </body>
 </html>
